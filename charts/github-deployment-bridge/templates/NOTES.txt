@@ -1,0 +1,12 @@
+GitHub Deployment Bridge has been installed.
+
+Cluster: {{ .Values.config.clusterName }}
+Environment: {{ .Values.config.environment }}
+
+Ensure your container images include OCI labels:
+  org.opencontainers.image.source
+  org.opencontainers.image.revision
+  org.opencontainers.image.version
+
+Metrics: http://{{ include "github-deployment-bridge.fullname" . }}:{{ .Values.service.metricsPort }}/metrics
+Health:  http://{{ include "github-deployment-bridge.fullname" . }}:{{ .Values.service.metricsPort }}/healthz

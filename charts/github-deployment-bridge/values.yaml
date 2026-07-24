@@ -1,0 +1,92 @@
+# SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/roberteggl/github-deployment-bridge
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+rbac:
+  create: true
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  metricsPort: 8080
+  probePort: 8081
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClass: ""
+  accessMode: ReadWriteOnce
+
+# Bridge configuration
+config:
+  clusterName: production
+  environment: production
+  watchNamespace: ""
+  environmentURL: ""
+  logURLTemplate: ""
+  leaderElection: true
+  githubBaseURL: ""
+
+github:
+  # Name of an existing Secret containing:
+  #   app-id, installation-id, private-key
+  existingSecret: ""
+  # Or provide values directly (not recommended for production).
+  appId: ""
+  installationId: ""
+  # PEM contents of the GitHub App private key.
+  privateKey: ""
+
+probes:
+  liveness:
+    path: /healthz
+    port: probes
+  readiness:
+    path: /readyz
+    port: probes

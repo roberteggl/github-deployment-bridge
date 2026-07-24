@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev>
+#
+# SPDX-License-Identifier: Apache-2.0
+apiVersion: v2
+name: github-deployment-bridge
+description: Bridge FluxCD reconciliations to GitHub Deployments
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/roberteggl/github-deployment-bridge
+sources:
+  - https://github.com/roberteggl/github-deployment-bridge
+keywords:
+  - flux
+  - fluxcd
+  - github
+  - deployments
+  - gitops
+maintainers:
+  - name: Robert Eggl
+    email: robert@eggl.dev

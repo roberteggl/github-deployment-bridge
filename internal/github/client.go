@@ -1,0 +1,201 @@
+// SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev>
+//
+// SPDX-License-Identifier: Apache-2.0
+
+// Package github provides a GitHub App authenticated client for Deployments.
+package github
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/bradleyfalzon/ghinstallation/v2"
+	"github.com/google/go-github/v75/github"
+
+	"github.com/roberteggl/github-deployment-bridge/internal/metrics"
+	"github.com/roberteggl/github-deployment-bridge/pkg/retry"
+)
+
+// DeploymentRequest describes a deployment to create.
+type DeploymentRequest struct {
+	Owner                 string
+	Repo                  string
+	Ref                   string
+	Environment           string
+	ProductionEnvironment bool
+	Description           string
+}
+
+// DeploymentStatusRequest describes a deployment status to create.
+type DeploymentStatusRequest struct {
+	Owner          string
+	Repo           string
+	DeploymentID   int64
+	State          string
+	EnvironmentURL string
+	LogURL         string
+	Description    string
+}
+
+// DeploymentResult is returned after creating a deployment.
+type DeploymentResult struct {
+	ID int64
+}
+
+// Client creates GitHub Deployments and statuses.
+type Client interface {
+	CreateDeployment(ctx context.Context, req DeploymentRequest) (*DeploymentResult, error)
+	CreateDeploymentStatus(ctx context.Context, req DeploymentStatusRequest) error
+}
+
+// AppClient is a GitHub App installation client.
+type AppClient struct {
+	client  *github.Client
+	metrics *metrics.Metrics
+	retry   retry.Config
+}
+
+// Options configures a new AppClient.
+type Options struct {
+	AppID          int64
+	InstallationID int64
+	PrivateKeyPath string
+	BaseURL        string
+	Metrics        *metrics.Metrics
+	Retry          retry.Config
+	Transport      http.RoundTripper
+}
+
+// NewAppClient builds a GitHub App installation client.
+func NewAppClient(opts Options) (*AppClient, error) {
+	base := opts.Transport
+	if base == nil {
+		base = http.DefaultTransport
+	}
+
+	itr, err := ghinstallation.NewKeyFromFile(base, opts.AppID, opts.InstallationID, opts.PrivateKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("create GitHub App transport: %w", err)
+	}
+
+	httpClient := &http.Client{Transport: itr, Timeout: 30 * time.Second}
+	client := github.NewClient(httpClient)
+
+	if opts.BaseURL != "" {
+		// Accept either https://ghe.example.com or https://ghe.example.com/api/v3.
+		baseURL := strings.TrimRight(opts.BaseURL, "/")
+		baseURL = strings.TrimSuffix(baseURL, "/api/v3")
+		itr.BaseURL = baseURL + "/api/v3"
+		client, err = client.WithEnterpriseURLs(baseURL+"/", baseURL+"/")
+		if err != nil {
+			return nil, fmt.Errorf("configure GitHub enterprise URLs: %w", err)
+		}
+	}
+
+	cfg := opts.Retry
+	if cfg.MaxAttempts == 0 {
+		cfg = retry.Default()
+	}
+
+	return &AppClient{
+		client:  client,
+		metrics: opts.Metrics,
+		retry:   cfg,
+	}, nil
+}
+
+// CreateDeployment creates a GitHub Deployment.
+func (c *AppClient) CreateDeployment(ctx context.Context, req DeploymentRequest) (*DeploymentResult, error) {
+	var result *DeploymentResult
+	err := retry.Do(ctx, c.retry, func(ctx context.Context) error {
+		start := time.Now()
+		desc := req.Description
+		if desc == "" {
+			desc = "Deployed by FluxCD"
+		}
+		emptyContexts := []string{}
+		ghReq := &github.DeploymentRequest{
+			Ref:                   github.Ptr(req.Ref),
+			Environment:           github.Ptr(req.Environment),
+			AutoMerge:             github.Ptr(false),
+			RequiredContexts:      &emptyContexts,
+			ProductionEnvironment: github.Ptr(req.ProductionEnvironment),
+			Description:           github.Ptr(desc),
+		}
+
+		dep, resp, err := c.client.Repositories.CreateDeployment(ctx, req.Owner, req.Repo, ghReq)
+		c.observe("create_deployment", start, err, resp)
+		if err != nil {
+			return classifyGitHubError(err, resp)
+		}
+		if dep == nil || dep.ID == nil {
+			return retry.Permanent(fmt.Errorf("github returned deployment without id"))
+		}
+		result = &DeploymentResult{ID: *dep.ID}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// CreateDeploymentStatus creates a deployment status.
+func (c *AppClient) CreateDeploymentStatus(ctx context.Context, req DeploymentStatusRequest) error {
+	return retry.Do(ctx, c.retry, func(ctx context.Context) error {
+		start := time.Now()
+		desc := req.Description
+		if desc == "" {
+			desc = "Flux reconciliation succeeded"
+		}
+		ghReq := &github.DeploymentStatusRequest{
+			State:       github.Ptr(req.State),
+			Description: github.Ptr(desc),
+		}
+		if req.EnvironmentURL != "" {
+			ghReq.EnvironmentURL = github.Ptr(req.EnvironmentURL)
+		}
+		if req.LogURL != "" {
+			ghReq.LogURL = github.Ptr(req.LogURL)
+		}
+
+		_, resp, err := c.client.Repositories.CreateDeploymentStatus(ctx, req.Owner, req.Repo, req.DeploymentID, ghReq)
+		c.observe("create_deployment_status", start, err, resp)
+		if err != nil {
+			return classifyGitHubError(err, resp)
+		}
+		return nil
+	})
+}
+
+func (c *AppClient) observe(operation string, start time.Time, err error, resp *github.Response) {
+	if c.metrics == nil {
+		return
+	}
+	c.metrics.GitHubAPILatencySeconds.WithLabelValues(operation).Observe(time.Since(start).Seconds())
+	result := "success"
+	if err != nil {
+		result = "error"
+		if resp != nil && resp.StatusCode >= 400 && resp.StatusCode < 500 && resp.StatusCode != 429 {
+			result = "client_error"
+		}
+	}
+	c.metrics.GitHubAPIRequestsTotal.WithLabelValues(operation, result).Inc()
+}
+
+func classifyGitHubError(err error, resp *github.Response) error {
+	if resp == nil {
+		return err
+	}
+	// Retry rate limits and server errors; treat other 4xx as permanent.
+	if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
+		return err
+	}
+	if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+		return retry.Permanent(err)
+	}
+	return err
+}

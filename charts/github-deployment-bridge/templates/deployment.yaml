@@ -1,0 +1,125 @@
+# SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "github-deployment-bridge.fullname" . }}
+  labels:
+    {{- include "github-deployment-bridge.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "github-deployment-bridge.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "github-deployment-bridge.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "github-deployment-bridge.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: bridge
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: metrics
+              containerPort: 8080
+              protocol: TCP
+            - name: probes
+              containerPort: 8081
+              protocol: TCP
+          env:
+            - name: CLUSTER_NAME
+              value: {{ .Values.config.clusterName | quote }}
+            - name: ENVIRONMENT
+              value: {{ .Values.config.environment | quote }}
+            - name: WATCH_NAMESPACE
+              value: {{ .Values.config.watchNamespace | quote }}
+            - name: DATABASE
+              value: /data/cache.db
+            - name: ENVIRONMENT_URL
+              value: {{ .Values.config.environmentURL | quote }}
+            - name: LOG_URL_TEMPLATE
+              value: {{ .Values.config.logURLTemplate | quote }}
+            - name: METRICS_ADDR
+              value: ":8080"
+            - name: PROBE_ADDR
+              value: ":8081"
+            - name: LEADER_ELECTION
+              value: {{ .Values.config.leaderElection | quote }}
+            - name: GITHUB_APP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "github-deployment-bridge.secretName" . }}
+                  key: app-id
+            - name: GITHUB_INSTALLATION_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "github-deployment-bridge.secretName" . }}
+                  key: installation-id
+            - name: GITHUB_PRIVATE_KEY_PATH
+              value: /github/private-key.pem
+            {{- if .Values.config.githubBaseURL }}
+            - name: GITHUB_BASE_URL
+              value: {{ .Values.config.githubBaseURL | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: github
+              mountPath: /github
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness.path }}
+              port: {{ .Values.probes.liveness.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: {{ .Values.probes.readiness.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "github-deployment-bridge.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: github
+          secret:
+            secretName: {{ include "github-deployment-bridge.secretName" . }}
+            items:
+              - key: private-key
+                path: private-key.pem
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

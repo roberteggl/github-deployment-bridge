@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "github-deployment-bridge.fullname" . }}
+  labels:
+    {{- include "github-deployment-bridge.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: metrics
+      port: {{ .Values.service.metricsPort }}
+      targetPort: metrics
+      protocol: TCP
+    - name: probes
+      port: {{ .Values.service.probePort }}
+      targetPort: probes
+      protocol: TCP
+  selector:
+    {{- include "github-deployment-bridge.selectorLabels" . | nindent 4 }}
