@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-FROM golang:1.26-bookworm AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26-bookworm AS builder
 
 WORKDIR /src
 
@@ -12,7 +12,7 @@ RUN go mod download
 COPY . .
 
 ARG TARGETOS=linux
-ARG TARGETARCH=amd64
+ARG TARGETARCH
 ARG VERSION=dev
 ARG COMMIT=unknown
 
@@ -21,6 +21,16 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     -o /out/bridge ./cmd/bridge
 
 FROM gcr.io/distroless/static-debian12:nonroot
+
+ARG VERSION=dev
+ARG COMMIT=unknown
+
+LABEL org.opencontainers.image.title="github-deployment-bridge" \
+      org.opencontainers.image.description="Bridge FluxCD reconciliations to GitHub Deployments" \
+      org.opencontainers.image.source="https://github.com/roberteggl/github-deployment-bridge" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${COMMIT}"
 
 COPY --from=builder /out/bridge /bridge
 

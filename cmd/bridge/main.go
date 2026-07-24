@@ -40,6 +40,8 @@ import (
 )
 
 var (
+	version  = "dev"
+	commit   = "unknown"
 	scheme   = runtime.NewScheme()
 	setupLog = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 )
@@ -163,6 +165,8 @@ func run() error {
 
 	probes.SetReady(true)
 	log.Info("starting manager",
+		"version", version,
+		"commit", commit,
 		"cluster", cfg.ClusterName,
 		"environment", cfg.Environment,
 		"watchNamespace", cfg.WatchNamespace,

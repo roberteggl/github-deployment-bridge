@@ -107,13 +107,28 @@ logURLTemplate: https://grafana.example.com/explore?commit={sha}
 
 Metrics include `deployment_reports_total`, `deployment_failures_total`, `github_api_requests_total`, `github_api_latency_seconds`, `oci_requests_total`, `cache_hits_total`, and `cache_misses_total`.
 
+## Install from a release
+
+```bash
+helm install github-deployment-bridge \
+  oci://ghcr.io/roberteggl/charts/github-deployment-bridge \
+  --version 0.1.0 \
+  --namespace flux-system \
+  --set config.clusterName=production-eu \
+  --set config.environment=production \
+  --set github.existingSecret=github-deployment-bridge
+```
+
+Image: `ghcr.io/roberteggl/github-deployment-bridge:<version>` (multi-arch `amd64`/`arm64`, Cosign-signed).
+
 ## Development
 
 ```bash
 make tidy test build
 ```
 
-See [docs/development.md](docs/development.md) and [docs/architecture.md](docs/architecture.md).
+See [docs/development.md](docs/development.md), [docs/architecture.md](docs/architecture.md),
+and [docs/releasing.md](docs/releasing.md).
 
 ## Non-goals
 

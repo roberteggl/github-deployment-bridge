@@ -1,0 +1,107 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices",
+    "helpers:pinGitHubActionDigestsToSemver",
+    ":semanticCommits",
+    ":semanticCommitTypeAll(chore)",
+    ":semanticCommitScope(deps)",
+    ":maintainLockFilesWeekly"
+  ],
+  "labels": ["dependencies"],
+  "dependencyDashboard": true,
+  "platformAutomerge": true,
+  "prHourlyLimit": 5,
+  "prConcurrentLimit": 5,
+  "postUpdateOptions": ["gomodTidy"],
+  "packageRules": [
+    {
+      "description": "Group Go module updates (non-major)",
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "go modules (non-major)",
+      "automerge": true
+    },
+    {
+      "description": "Keep Kubernetes client libraries on one PR",
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": [
+        "k8s.io/api",
+        "k8s.io/apimachinery",
+        "k8s.io/client-go",
+        "k8s.io/apiextensions-apiserver",
+        "sigs.k8s.io/controller-runtime"
+      ],
+      "groupName": "kubernetes libraries (major)"
+    },
+    {
+      "description": "Keep Flux API libraries on one PR",
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": [
+        "github.com/fluxcd/kustomize-controller/api",
+        "github.com/fluxcd/pkg/**"
+      ],
+      "groupName": "flux libraries (major)"
+    },
+    {
+      "description": "Other Go major updates stay separate for review",
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": [
+        "!k8s.io/api",
+        "!k8s.io/apimachinery",
+        "!k8s.io/client-go",
+        "!k8s.io/apiextensions-apiserver",
+        "!sigs.k8s.io/controller-runtime",
+        "!github.com/fluxcd/kustomize-controller/api",
+        "!github.com/fluxcd/pkg/**"
+      ],
+      "groupName": "go modules (major)"
+    },
+    {
+      "description": "Group and automerge GitHub Actions updates",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "automerge": true
+    },
+    {
+      "description": "Group Dockerfile base image updates",
+      "matchManagers": ["dockerfile"],
+      "groupName": "docker base images",
+      "automerge": true,
+      "matchUpdateTypes": ["minor", "patch", "digest"]
+    },
+    {
+      "description": "Major base image bumps need review",
+      "matchManagers": ["dockerfile"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "docker base images (major)"
+    },
+    {
+      "description": "Helm CLI pin in workflows",
+      "matchManagers": ["custom.regex"],
+      "matchDepNames": ["helm"],
+      "groupName": "helm",
+      "automerge": true,
+      "matchUpdateTypes": ["minor", "patch"]
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Bump Helm version pins in GitHub Actions workflows",
+      "managerFilePatterns": [
+        "/(^|/)\\.github/workflows/[^/]+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "version:\\s*v?(?<currentValue>\\d+\\.\\d+\\.\\d+)\\s*#\\s*helm"
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "helm/helm",
+      "extractVersionTemplate": "^v(?<version>.*)$",
+      "depNameTemplate": "helm"
+    }
+  ]
+}

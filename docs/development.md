@@ -52,3 +52,17 @@ go test ./test/integration -tags=integration -count=1
 ```bash
 make docker-build IMG=ghcr.io/roberteggl/github-deployment-bridge VERSION=dev
 ```
+
+## Dependency updates
+
+[Renovate](https://docs.renovatebot.com/) is configured via [`renovate.json`](../renovate.json).
+It opens `chore(deps):` PRs labeled `dependencies`, with automerge for safe
+non-major updates (Go modules, Actions, Docker digests).
+
+## Releasing
+
+See [releasing.md](releasing.md). Preview changelog with:
+
+```bash
+git cliff --unreleased
+```

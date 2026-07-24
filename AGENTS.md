@@ -35,6 +35,7 @@ Read these before making non-trivial changes:
 | [docs/architecture.md](docs/architecture.md) | Event flow, workload discovery, OCI labels |
 | [docs/configuration.md](docs/configuration.md) | Env vars, permissions, private registries |
 | [docs/development.md](docs/development.md) | Build, test, local run, integration tests |
+| [docs/releasing.md](docs/releasing.md) | Tag-driven release pipeline (git-cliff, GHCR, Helm) |
 
 ## Commits (DCO / `-s` required)
 
@@ -52,6 +53,41 @@ EOF
 
 Do not use `--no-gpg-sign` / `--no-verify` unless the user explicitly asks.
 Do not commit unless the user asks. Push only when requested.
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`,
+`fix:`, `docs:`, `ci:`, …) so [git-cliff](https://git-cliff.org/) can generate
+release notes.
+
+## Dependency updates (Renovate)
+
+Configured in [`renovate.json`](renovate.json) (`config:best-practices`):
+
+- Semantic commits: `chore(deps): …`
+- `gomodTidy` after Go bumps
+- Automerge: Go non-major, GitHub Actions, Docker patch/minor/digest
+- Grouped majors for Kubernetes + Flux libraries
+- Custom manager for Helm CLI pins (`# helm` in workflows)
+
+Enable the [Renovate GitHub App](https://github.com/apps/renovate) on this
+repository if it is not already installed for the org/user.
+
+## Releasing
+
+Automated on `v*` tag push (see [docs/releasing.md](docs/releasing.md)):
+
+1. Validate (tests, Helm, chart version == tag, REUSE)
+2. Changelog via git-cliff (`cliff.toml`)
+3. Native multi-arch image (`ubuntu-24.04` + `ubuntu-24.04-arm`, no QEMU) → GHCR
+4. Cosign keyless sign + SBOM/provenance
+5. Helm chart → `oci://ghcr.io/<owner>/charts`
+6. GitHub Release (`softprops/action-gh-release`)
+
+```bash
+# Bump charts/github-deployment-bridge/Chart.yaml version + appVersion first
+git commit -s -m "chore(release): prepare v0.1.0"
+git tag v0.1.0
+git push origin v0.1.0
+```
 
 ## REUSE licensing
 
