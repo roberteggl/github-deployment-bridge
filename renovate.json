@@ -3,6 +3,7 @@
   "extends": [
     "config:best-practices",
     "helpers:pinGitHubActionDigestsToSemver",
+    ":gitSignOff",
     ":semanticCommits",
     ":semanticCommitTypeAll(chore)",
     ":semanticCommitScope(deps)",
@@ -20,8 +21,13 @@
     {
       "description": "Group Go module updates (non-major)",
       "matchManagers": ["gomod"],
-      "matchUpdateTypes": ["minor", "patch"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "groupName": "go modules (non-major)",
+      "automerge": true
+    },
+    {
+      "description": "Automerge dependency pins",
+      "matchUpdateTypes": ["pin", "pinDigest"],
       "automerge": true
     },
     {
@@ -65,6 +71,7 @@
     {
       "description": "Group and automerge GitHub Actions updates",
       "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "pinDigest", "digest"],
       "groupName": "GitHub Actions",
       "automerge": true
     },
@@ -73,7 +80,7 @@
       "matchManagers": ["dockerfile"],
       "groupName": "docker base images",
       "automerge": true,
-      "matchUpdateTypes": ["minor", "patch", "digest"]
+      "matchUpdateTypes": ["minor", "patch", "pin", "pinDigest", "digest"]
     },
     {
       "description": "Major base image bumps need review",
@@ -87,7 +94,7 @@
       "matchDepNames": ["helm"],
       "groupName": "helm",
       "automerge": true,
-      "matchUpdateTypes": ["minor", "patch"]
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"]
     }
   ],
   "customManagers": [
