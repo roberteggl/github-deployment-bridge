@@ -11,6 +11,8 @@
   "labels": ["dependencies"],
   "dependencyDashboard": true,
   "platformAutomerge": true,
+  "minimumReleaseAge": "2 days",
+  "internalChecksFilter": "strict",
   "prHourlyLimit": 5,
   "prConcurrentLimit": 5,
   "postUpdateOptions": ["gomodTidy"],
