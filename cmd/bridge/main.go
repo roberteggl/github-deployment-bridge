@@ -19,6 +19,7 @@ import (
 	helmv2 "github.com/fluxcd/helm-controller/api/v2"
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -71,6 +72,8 @@ func run() error {
 
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	slog.SetDefault(log)
+	// controller-runtime requires an explicit logr logger; bridge our slog handler.
+	ctrl.SetLogger(logr.FromSlogHandler(log.Handler()))
 
 	m := metrics.New(nil)
 	probes := health.New()

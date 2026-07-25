@@ -12,6 +12,7 @@ require (
 	github.com/fluxcd/kustomize-controller/api v1.9.4
 	github.com/fluxcd/pkg/apis/meta v1.31.0
 	github.com/go-chi/chi/v5 v5.3.1
+	github.com/go-logr/logr v1.4.3
 	github.com/google/go-containerregistry v0.21.7
 	github.com/google/go-github/v89 v89.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -35,7 +36,6 @@ require (
 	github.com/fluxcd/pkg/apis/kustomize v1.19.1 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
-	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
