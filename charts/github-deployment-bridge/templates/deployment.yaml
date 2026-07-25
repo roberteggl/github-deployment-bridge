@@ -41,10 +41,10 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: metrics
-              containerPort: 8080
+              containerPort: {{ .Values.containerPorts.metrics }}
               protocol: TCP
             - name: probes
-              containerPort: 8081
+              containerPort: {{ .Values.containerPorts.probes }}
               protocol: TCP
           env:
             - name: CLUSTER_NAME
@@ -62,9 +62,9 @@ spec:
             - name: LOG_LEVEL
               value: {{ .Values.config.logLevel | default "info" | quote }}
             - name: METRICS_ADDR
-              value: ":8080"
+              value: {{ printf ":%v" .Values.containerPorts.metrics | quote }}
             - name: PROBE_ADDR
-              value: ":8081"
+              value: {{ printf ":%v" .Values.containerPorts.probes | quote }}
             - name: LEADER_ELECTION
               value: {{ .Values.config.leaderElection | quote }}
             - name: RETRY_MAX_ATTEMPTS

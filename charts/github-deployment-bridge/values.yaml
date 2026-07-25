@@ -35,7 +35,13 @@ networkPolicy:
     allowDNS: true
     # GitHub API, GHES, OCI registries (hosts are not enumerable).
     allowHTTPS: true
-    # Extra egress rules (e.g. kube API on :6443). Appended as-is under egress.
+    # Kubernetes API (controller watches). Default :6443 covers common
+    # distributions; in-cluster API on :443 is already allowed by allowHTTPS.
+    # Destination is not CIDR-scoped — tighten via extraEgress if required.
+    allowKubeAPI: true
+    kubeAPIPorts:
+      - 6443
+    # Extra egress rules appended as-is under egress.
     extraEgress: []
 
 # Opt-in Prometheus Operator ServiceMonitor. Requires the monitoring.coreos.com
@@ -67,6 +73,8 @@ prometheusRule:
   # histogram_quantile(0.99, …) threshold in seconds
   githubAPILatencyP99Seconds: 5
 
+# Keep prometheus.io/port in sync with containerPorts.metrics when using
+# annotation-based discovery (ServiceMonitor scrapes the Service instead).
 podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "8080"
@@ -86,8 +94,14 @@ securityContext:
     drop:
       - ALL
 
+# Container listen ports (NetworkPolicy matches these, not service.*Port).
+containerPorts:
+  metrics: 8080
+  probes: 8081
+
 service:
   type: ClusterIP
+  # Published Service ports (targetPort uses the named container ports above).
   metricsPort: 8080
   probePort: 8081
 

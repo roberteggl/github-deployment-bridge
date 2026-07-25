@@ -23,7 +23,10 @@ Persistence: /data is backed by a PVC. Deployment strategy is Recreate so
 {{- end }}
 {{- if .Values.networkPolicy.enabled }}
 
-NetworkPolicy: enabled (metrics/probes ingress; DNS + HTTPS egress by default).
+NetworkPolicy: enabled (metrics/probes ingress on container ports
+  {{ .Values.containerPorts.metrics }}/{{ .Values.containerPorts.probes }};
+  DNS{{- if .Values.networkPolicy.egress.allowHTTPS }} + HTTPS{{- end }}{{- if .Values.networkPolicy.egress.allowKubeAPI }} + kube-API ({{ join ", " .Values.networkPolicy.egress.kubeAPIPorts }}){{- end }} egress by default).
+  Tighten kube-API destinations via networkPolicy.egress.extraEgress if required.
 {{- end }}
 {{- if .Values.serviceMonitor.enabled }}
 

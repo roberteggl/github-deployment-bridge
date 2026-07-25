@@ -24,7 +24,8 @@ SPDX-License-Identifier: Apache-2.0
 | `rbac.create` | _(chart only)_ — emit RBAC |
 | `networkPolicy.enabled` | _(chart only)_ — emit NetworkPolicy |
 | `networkPolicy.ingress.metricsFrom` | _(chart only)_ — optional scrape peers |
-| `networkPolicy.egress.allowDNS` / `allowHTTPS` / `extraEgress` | _(chart only)_ |
+| `networkPolicy.egress.allowDNS` / `allowHTTPS` / `allowKubeAPI` / `kubeAPIPorts` / `extraEgress` | _(chart only)_ |
+| `containerPorts.metrics` / `containerPorts.probes` | `METRICS_ADDR` / `PROBE_ADDR` listen ports (also NetworkPolicy ingress) |
 | `serviceMonitor.enabled` | _(chart only)_ — emit Prometheus Operator ServiceMonitor |
 | `serviceMonitor.labels` / `interval` / `scrapeTimeout` / … | _(chart only)_ — scrape tuning |
 | `prometheusRule.enabled` | _(chart only)_ — emit PrometheusRule alerts |
@@ -54,7 +55,9 @@ networkPolicy:
       - namespaceSelector:
           matchLabels:
             name: monitoring
-
+  # allowKubeAPI: true (default) — TCP 6443 for the apiserver
+  #   (:443 covered by allowHTTPS; add to kubeAPIPorts if you disable HTTPS)
+  # egress.extraEgress: []  # optional CIDR-scoped kube-API rules
 serviceMonitor:
   enabled: true
   labels:

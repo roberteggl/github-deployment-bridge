@@ -17,11 +17,12 @@ spec:
     - Ingress
     - Egress
   ingress:
+    # Match container listen ports (not service.*Port — those are Service-facing).
     - ports:
         - protocol: TCP
-          port: {{ .Values.service.metricsPort }}
+          port: {{ .Values.containerPorts.metrics }}
         - protocol: TCP
-          port: {{ .Values.service.probePort }}
+          port: {{ .Values.containerPorts.probes }}
       {{- with .Values.networkPolicy.ingress.metricsFrom }}
       from:
         {{- toYaml . | nindent 8 }}
@@ -38,6 +39,13 @@ spec:
     - ports:
         - protocol: TCP
           port: 443
+    {{- end }}
+    {{- if .Values.networkPolicy.egress.allowKubeAPI }}
+    - ports:
+        {{- range .Values.networkPolicy.egress.kubeAPIPorts }}
+        - protocol: TCP
+          port: {{ . }}
+        {{- end }}
     {{- end }}
     {{- with .Values.networkPolicy.egress.extraEgress }}
     {{- toYaml . | nindent 4 }}

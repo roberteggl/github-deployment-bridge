@@ -182,6 +182,45 @@ jobs:
           echo "${out}" | grep -q 'value: "1s"'
           echo "${out}" | grep -q 'name: RETRY_MAX_BACKOFF'
           echo "${out}" | grep -q 'value: "60s"'
+          # NetworkPolicy: kube-API egress (C1) + container listen ports (H1)
+          echo "${out}" | grep -q 'port: 6443'
+          echo "${out}" | grep -A2 'METRICS_ADDR' | grep -q 'value: ":8080"'
+          ports_skew="$(helm template github-deployment-bridge charts/github-deployment-bridge \
+            --set github.appId=1 \
+            --set github.installationId=1 \
+            --set github.privateKey=ci-fake-key \
+            --set networkPolicy.enabled=true \
+            --set containerPorts.metrics=9090 \
+            --set containerPorts.probes=9091 \
+            --set service.metricsPort=18080 \
+            --set service.probePort=18081)"
+          echo "${ports_skew}" | grep -q 'containerPort: 9090'
+          echo "${ports_skew}" | grep -q 'containerPort: 9091'
+          echo "${ports_skew}" | grep -A2 'METRICS_ADDR' | grep -q 'value: ":9090"'
+          echo "${ports_skew}" | grep -A2 'PROBE_ADDR' | grep -q 'value: ":9091"'
+          # NP must allow pod ports, not Service published ports
+          np_skew="$(echo "${ports_skew}" | awk '/kind: NetworkPolicy/,/^---$/')"
+          echo "${np_skew}" | grep -q 'port: 9090'
+          echo "${np_skew}" | grep -q 'port: 9091'
+          if echo "${np_skew}" | grep -q 'port: 18080'; then
+            echo "NetworkPolicy must not use service.metricsPort for pod ingress"
+            exit 1
+          fi
+          if echo "${np_skew}" | grep -q 'port: 18081'; then
+            echo "NetworkPolicy must not use service.probePort for pod ingress"
+            exit 1
+          fi
+          no_kubeapi="$(helm template github-deployment-bridge charts/github-deployment-bridge \
+            --set github.appId=1 \
+            --set github.installationId=1 \
+            --set github.privateKey=ci-fake-key \
+            --set networkPolicy.enabled=true \
+            --set networkPolicy.egress.allowKubeAPI=false)"
+          np_no_kubeapi="$(echo "${no_kubeapi}" | awk '/kind: NetworkPolicy/,/^---$/')"
+          if echo "${np_no_kubeapi}" | grep -q 'port: 6443'; then
+            echo "expected no kube-API :6443 when allowKubeAPI=false"
+            exit 1
+          fi
           if echo "${out}" | grep -q 'kind: ClusterRole'; then
             echo "expected no ClusterRole when watchNamespace is set"
             exit 1

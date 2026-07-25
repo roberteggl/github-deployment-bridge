@@ -119,9 +119,13 @@ Lease permissions (release namespace only):
 
 Set `networkPolicy.enabled: true` to restrict the pod:
 
-- **Ingress:** TCP metrics + probe ports (optional `ingress.metricsFrom` peers)
-- **Egress:** DNS + HTTPS by default (GitHub API, registries); add
-  `egress.extraEgress` for kube-apiserver CIDRs / `:6443` if needed
+- **Ingress:** TCP on `containerPorts.metrics` / `containerPorts.probes`
+  (optional `ingress.metricsFrom` peers). These are pod listen ports — not
+  `service.metricsPort` / `service.probePort`.
+- **Egress:** DNS + HTTPS + kube-API (`allowKubeAPI`, port `6443` by default;
+  in-cluster `:443` is covered by `allowHTTPS`). Tighten destinations with
+  `egress.extraEgress` (CIDRs) if your policy requires it; set
+  `allowKubeAPI: false` only when you supply equivalent rules yourself.
 
 ### ServiceMonitor (optional)
 
