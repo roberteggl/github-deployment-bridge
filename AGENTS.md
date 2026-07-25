@@ -8,7 +8,8 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Project
 
-**github-deployment-bridge** is a lightweight Go Kubernetes controller that
+**GitHub Deployment Bridge** (`github-deployment-bridge`) is a lightweight Go
+Kubernetes controller that
 bridges FluxCD reconciliations to the GitHub Deployments API.
 
 When a Flux `Kustomization` or `HelmRelease` reconciles, the bridge:

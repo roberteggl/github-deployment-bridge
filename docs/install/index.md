@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Install in a cluster
 
-Install **github-deployment-bridge** with Helm alongside FluxCD: GitHub App,
+Install **GitHub Deployment Bridge** with Helm alongside FluxCD: GitHub App,
 secrets, persistence, and verification.
 
 ```mermaid

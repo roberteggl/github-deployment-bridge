@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Contributing
 
-Thanks for helping improve **github-deployment-bridge**.
+Thanks for helping improve **GitHub Deployment Bridge**.
 
 ## Before you start
 

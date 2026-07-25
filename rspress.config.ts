@@ -10,11 +10,11 @@ const isGitHubActions = process.env.GITHUB_ACTIONS === "true";
 
 export default defineConfig({
   root: path.join(__dirname, "docs"),
-  title: "github-deployment-bridge",
+  title: "GitHub Deployment Bridge",
   description:
     "Lightweight Kubernetes controller that bridges FluxCD reconciliations to the GitHub Deployments API.",
   icon: "/favicon.svg",
-  logoText: "github-deployment-bridge",
+  logoText: "GitHub Deployment Bridge",
   // Project Pages live at https://<user>.github.io/<repo>/
   base: isGitHubActions ? "/github-deployment-bridge/" : "/",
   lang: "en",

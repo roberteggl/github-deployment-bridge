@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev>
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# github-deployment-bridge
+# GitHub Deployment Bridge
 
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-0b1020)](https://roberteggl.github.io/github-deployment-bridge/)
 [![REUSE status](https://api.reuse.software/badge/github.com/roberteggl/github-deployment-bridge)](https://api.reuse.software/info/github.com/roberteggl/github-deployment-bridge)

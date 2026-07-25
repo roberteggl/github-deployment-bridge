@@ -12,7 +12,7 @@ flowchart TD
   Build --> Push[Push GHCR image with OCI labels]
   Push --> FIA[Flux Image Automation]
   FIA --> Flux[Flux reconciles Kustomization / HelmRelease]
-  Flux --> Bridge[github-deployment-bridge]
+  Flux --> Bridge[GitHub Deployment Bridge]
   Bridge --> Phase[Derive phase]
   Phase --> Inv[Read inventory workloads + annotations]
   Inv --> OCI[Fetch OCI manifest + config]
