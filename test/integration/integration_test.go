@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-//go:build integration
-
 package integration_test
 
 import (
@@ -16,13 +14,12 @@ import (
 	"github.com/roberteggl/github-deployment-bridge/internal/config"
 	"github.com/roberteggl/github-deployment-bridge/internal/deployment"
 	gh "github.com/roberteggl/github-deployment-bridge/internal/github"
+	"github.com/roberteggl/github-deployment-bridge/pkg/metadata"
 	"github.com/roberteggl/github-deployment-bridge/pkg/ocilabels"
 )
 
 // Integration tests exercise the reporter lifecycle against fakes.
-// A full kind+Flux harness can be layered on later; run with:
-//
-//	go test ./test/integration -tags=integration -count=1
+// A full kind+Flux harness can be layered on later.
 
 type fakeRegistry struct {
 	meta ocilabels.Metadata
@@ -165,6 +162,9 @@ func input(phase deployment.Phase) deployment.ReportInput {
 			Kind:      "Deployment",
 			Name:      "app",
 			Image:     "ghcr.io/example/app:1",
+			Annotations: map[string]string{
+				metadata.AnnotationAutoReport: "true",
+			},
 		}},
 	}
 }
