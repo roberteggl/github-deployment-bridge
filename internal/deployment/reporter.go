@@ -215,12 +215,22 @@ func (r *Reporter) reportImage(ctx context.Context, in ReportInput, img Workload
 	prev := current
 	for _, step := range steps {
 		if deploymentID == 0 {
-			id, err := r.createDeployment(ctx, in, img, resolved, digest)
+			// Persist a provisional marker before GitHub create so retries can recover
+			// the deployment ID instead of creating a duplicate.
+			if err := r.cache.Put(ctx, cache.Entry{
+				Key:          key,
+				DeploymentID: 0,
+				Status:       string(prev),
+				ReportedAt:   time.Now().UTC(),
+			}); err != nil {
+				return fmt.Errorf("cache store provisional deployment: %w", err)
+			}
+
+			id, err := r.resolveOrCreateDeployment(ctx, in, img, resolved, digest)
 			if err != nil {
 				return err
 			}
 			deploymentID = id
-			// Persist ID immediately so retries never create duplicates.
 			if err := r.cache.Put(ctx, cache.Entry{
 				Key:          key,
 				DeploymentID: deploymentID,
@@ -355,18 +365,36 @@ func (r *Reporter) resolveImage(ctx context.Context, img WorkloadImage) (metadat
 	return resolved, ociMeta.Digest, nil
 }
 
-func (r *Reporter) createDeployment(
+func (r *Reporter) resolveOrCreateDeployment(
 	ctx context.Context,
 	in ReportInput,
 	img WorkloadImage,
 	resolved metadata.Resolved,
 	digest string,
 ) (int64, error) {
-	task := ""
-	if _, set := img.Annotations[metadata.AnnotationDeploymentName]; set {
-		task = resolved.DeploymentName
+	payload := r.buildDeploymentPayload(in, img, resolved, digest)
+	found, err := r.github.FindDeployment(ctx, gh.FindDeploymentRequest{
+		Owner:       resolved.Repo.Owner,
+		Repo:        resolved.Repo.Name,
+		Ref:         resolved.Commit,
+		Environment: resolved.Environment,
+		Payload:     payload,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("find github deployment: %w", err)
 	}
+	if found != nil && found.ID != 0 {
+		return found.ID, nil
+	}
+	return r.createDeployment(ctx, in, img, resolved, digest, payload)
+}
 
+func (r *Reporter) buildDeploymentPayload(
+	in ReportInput,
+	img WorkloadImage,
+	resolved metadata.Resolved,
+	digest string,
+) map[string]any {
 	payload := map[string]any{
 		"cluster":           r.cfg.ClusterName,
 		"namespace":         in.Namespace,
@@ -385,6 +413,21 @@ func (r *Reporter) createDeployment(
 	}
 	if resolved.Version != "" {
 		payload["version"] = resolved.Version
+	}
+	return payload
+}
+
+func (r *Reporter) createDeployment(
+	ctx context.Context,
+	in ReportInput,
+	img WorkloadImage,
+	resolved metadata.Resolved,
+	digest string,
+	payload map[string]any,
+) (int64, error) {
+	task := ""
+	if _, set := img.Annotations[metadata.AnnotationDeploymentName]; set {
+		task = resolved.DeploymentName
 	}
 
 	dep, err := r.github.CreateDeployment(ctx, gh.DeploymentRequest{

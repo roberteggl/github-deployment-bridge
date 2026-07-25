@@ -163,4 +163,4 @@ Deployment `payload` includes `cluster`, `namespace`, source name (`kustomizatio
 
 Status updates set `auto_inactive=true`. When a newer commit reaches `success` for the same identity, prior cached `success` deployments are explicitly marked `inactive`.
 
-Deduplication cache key: `(owner, repo, environment, commitSHA, deploymentName)`. The cache stores `deployment_id` immediately after create (before status) so controller restarts never duplicate Deployments.
+Deduplication cache key: `(owner, repo, environment, commitSHA, deploymentName)`. Before creating a Deployment, the bridge writes a provisional cache row (`deployment_id=0`). It then searches GitHub for an existing Deployment with the same ref, environment, and payload (crash recovery) and only creates when none is found. The resolved `deployment_id` is persisted before status updates.

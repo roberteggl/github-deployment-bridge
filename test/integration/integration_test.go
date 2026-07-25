@@ -44,6 +44,10 @@ func (f *fakeGitHub) CreateDeployment(_ context.Context, req gh.DeploymentReques
 	return &gh.DeploymentResult{ID: f.nextID}, nil
 }
 
+func (f *fakeGitHub) FindDeployment(_ context.Context, _ gh.FindDeploymentRequest) (*gh.DeploymentResult, error) {
+	return nil, nil
+}
+
 func (f *fakeGitHub) CreateDeploymentStatus(_ context.Context, req gh.DeploymentStatusRequest) error {
 	f.statuses = append(f.statuses, req)
 	return nil

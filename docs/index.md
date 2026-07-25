@@ -27,7 +27,7 @@ features:
     icon: "◇"
     span: 4
   - title: Idempotent by design
-    details: SQLite deduplicates on owner, repo, environment, commit, and deployment name — and marks prior successes inactive when a newer commit lands.
+    details: SQLite deduplicates on owner, repo, environment, commit, and deployment name; crash recovery reuses existing GitHub Deployments when the cache has a provisional row — and marks prior successes inactive when a newer commit lands.
     icon: "⬡"
     span: 4
   - title: Flux Kustomization & HelmRelease

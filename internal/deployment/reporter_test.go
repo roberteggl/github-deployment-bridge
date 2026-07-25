@@ -6,6 +6,7 @@ package deployment_test
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"path/filepath"
 	"testing"
@@ -32,12 +33,41 @@ type fakeGitHub struct {
 	statuses    []gh.DeploymentStatusRequest
 	nextID      int64
 	statusErr   error
+	listedDeployments []struct {
+		ID          int64
+		Ref         string
+		Environment string
+		Payload     map[string]any
+	}
 }
 
 func (f *fakeGitHub) CreateDeployment(_ context.Context, req gh.DeploymentRequest) (*gh.DeploymentResult, error) {
 	f.deployments = append(f.deployments, req)
 	f.nextID++
 	return &gh.DeploymentResult{ID: f.nextID}, nil
+}
+
+func (f *fakeGitHub) FindDeployment(_ context.Context, req gh.FindDeploymentRequest) (*gh.DeploymentResult, error) {
+	for _, dep := range f.listedDeployments {
+		if dep.Ref != req.Ref || dep.Environment != req.Environment {
+			continue
+		}
+		if !payloadMatches(dep.Payload, req.Payload) {
+			continue
+		}
+		return &gh.DeploymentResult{ID: dep.ID}, nil
+	}
+	return nil, nil
+}
+
+func payloadMatches(actual, expected map[string]any) bool {
+	for key, want := range expected {
+		got, ok := actual[key]
+		if !ok || fmt.Sprint(got) != fmt.Sprint(want) {
+			return false
+		}
+	}
+	return true
 }
 
 func (f *fakeGitHub) CreateDeploymentStatus(_ context.Context, req gh.DeploymentStatusRequest) error {
@@ -123,6 +153,84 @@ func TestReporterCatchUpSuccessAndSkipsDuplicates(t *testing.T) {
 	}
 	if len(g.deployments) != 1 || len(g.statuses) != 1 {
 		t.Fatalf("duplicate not prevented: got %d deployments and %d statuses", len(g.deployments), len(g.statuses))
+	}
+}
+
+
+func TestReporterRecoversDeploymentAfterCreateCrash(t *testing.T) {
+	t.Parallel()
+
+	store, err := cache.Open(filepath.Join(t.TempDir(), "cache.db"))
+	if err != nil {
+		t.Fatalf("open cache: %v", err)
+	}
+	t.Cleanup(func() { _ = store.Close() })
+
+	cfg := config.Config{
+		ClusterName:    "production-eu",
+		Environment:    "production",
+		EnvironmentURL: "https://app.example.com",
+	}
+	reg := &fakeRegistry{meta: ocilabels.Metadata{
+		Source:   "https://github.com/example/backend",
+		Revision: "deadbeefcafebabe",
+		Version:  "v1.2.3",
+		Digest:   "sha256:abc",
+	}}
+	g := &fakeGitHub{
+		listedDeployments: []struct {
+			ID          int64
+			Ref         string
+			Environment string
+			Payload     map[string]any
+		}{{
+			ID:          42,
+			Ref:         "deadbeefcafebabe",
+			Environment: "production",
+			Payload: map[string]any{
+				"cluster":           "production-eu",
+				"namespace":         "apps",
+				"deploymentName":    "backend",
+				"image":             "ghcr.io/example/backend:v1.2.3",
+				"controllerVersion": "test",
+				"kustomization":     "backend",
+				"digest":            "sha256:abc",
+				"version":           "v1.2.3",
+			},
+		}},
+	}
+	r := deployment.NewReporter(cfg, store, reg, g, nil, slog.Default(), "test")
+
+	key := cache.Key{
+		Owner:          "example",
+		Repo:           "backend",
+		Environment:    "production",
+		CommitSHA:      "deadbeefcafebabe",
+		DeploymentName: "backend",
+	}
+	if err := store.Put(context.Background(), cache.Entry{
+		Key:          key,
+		DeploymentID: 0,
+		Status:       "",
+	}); err != nil {
+		t.Fatalf("seed provisional cache: %v", err)
+	}
+
+	if err := r.Report(context.Background(), sampleInput(deployment.PhaseSuccess)); err != nil {
+		t.Fatalf("report after crash: %v", err)
+	}
+	if len(g.deployments) != 0 {
+		t.Fatalf("expected recovery without create, got %d deployments", len(g.deployments))
+	}
+	if len(g.statuses) != 1 || g.statuses[0].DeploymentID != 42 {
+		t.Fatalf("statuses = %#v, want one success for deployment 42", g.statuses)
+	}
+	entry, err := store.Get(context.Background(), key)
+	if err != nil {
+		t.Fatalf("cache get: %v", err)
+	}
+	if entry == nil || entry.DeploymentID != 42 {
+		t.Fatalf("cache deployment_id = %d, want 42", entry.DeploymentID)
 	}
 }
 
