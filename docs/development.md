@@ -11,7 +11,6 @@ SPDX-License-Identifier: Apache-2.0
 - Go 1.25+
 - Docker
 - Helm 3
-- `kubectl` / `kind` (for integration tests)
 
 ## Build & test
 
@@ -48,14 +47,12 @@ go run ./cmd/bridge
 
 ## Integration tests
 
-Integration tests under `test/integration` expect:
-
-1. A `kind` cluster with Flux installed
-2. A local registry (or GHCR credentials)
-3. A fake GitHub API (or recorded fixtures)
+Integration tests under `test/integration` exercise the reporter lifecycle
+against fakes (SQLite cache, registry, GitHub API). They run with the rest of
+the suite:
 
 ```bash
-go test ./test/integration -tags=integration -count=1
+go test ./test/integration -count=1
 ```
 
 ## Container image
