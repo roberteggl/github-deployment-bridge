@@ -19,3 +19,21 @@ keywords:
 maintainers:
   - name: Robert Eggl
     email: robert@eggl.dev
+annotations:
+  artifacthub.io/category: integration-delivery
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/operator: "true"
+  artifacthub.io/operatorCapabilities: Basic Install
+  artifacthub.io/links: |
+    - name: Documentation
+      url: https://roberteggl.github.io/github-deployment-bridge/
+    - name: support
+      url: https://github.com/roberteggl/github-deployment-bridge/issues
+    - name: Changelog
+      url: https://github.com/roberteggl/github-deployment-bridge/releases
+  artifacthub.io/images: |
+    - name: github-deployment-bridge
+      image: ghcr.io/roberteggl/github-deployment-bridge:1.2.2
+      platforms:
+        - linux/amd64
+        - linux/arm64

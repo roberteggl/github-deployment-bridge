@@ -3,5 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 .DS_Store
-*.md
 .git
+# Do not ignore README.md — Artifact Hub and `helm show readme` need it.
+# Avoid `*.md` + `!README.md`: Helm's ignore matcher treats that as excluding
+# Chart.yaml (chart load fails with "Chart.yaml file is missing").
