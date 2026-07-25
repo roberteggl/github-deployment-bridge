@@ -9,14 +9,6 @@ SPDX-License-Identifier: Apache-2.0
 Personal access tokens are **not** supported. Create a GitHub App and install it
 on every repository whose deployments you want reported.
 
-```mermaid
-flowchart TD
-  A[Create GitHub App] --> B[Grant repo permissions]
-  B --> C[Generate private key PEM]
-  C --> D[Install App on org / repos]
-  D --> E[Note App ID + Installation ID]
-```
-
 ## 1. Create the App
 
 In GitHub: **Settings → Developer settings → GitHub Apps → New GitHub App**.

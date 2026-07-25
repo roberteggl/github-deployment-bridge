@@ -6,9 +6,8 @@ SPDX-License-Identifier: Apache-2.0
 
 # Operations
 
-On-call notes for GitHub Deployment Bridge: alerts, common failures, and what
-to check when Deployments stop updating.
+Alert triage and failure checks for GitHub Deployment Bridge.
 
 | Page | Contents |
 |---|---|
-| [Runbook](./runbook.md) | Alert meanings and triage steps |
+| [Runbook](./runbook.md) | PrometheusRule alerts and what to check |

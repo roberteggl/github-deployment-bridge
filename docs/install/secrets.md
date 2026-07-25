@@ -18,14 +18,6 @@ Kubernetes Secret with these keys:
 The Helm chart mounts `private-key` at `/github/private-key.pem` and sets
 `GITHUB_PRIVATE_KEY_PATH` accordingly.
 
-```mermaid
-flowchart LR
-  PEM[App private key PEM] --> S[Kubernetes Secret]
-  ID[App ID + Installation ID] --> S
-  S --> Pod[Controller pod]
-  Pod --> GH[GitHub Deployments API]
-```
-
 ## Recommended: manage the Secret yourself
 
 ```bash

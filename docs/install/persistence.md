@@ -10,15 +10,6 @@ The bridge keeps a small SQLite database at `/data/cache.db` keyed by
 `(owner, repo, environment, commitSHA, deploymentName)`. That cache prevents
 duplicate GitHub Deployments when Flux re-reconciles the same commit.
 
-```mermaid
-flowchart TD
-  Flux[Flux reconcile] --> Bridge[Bridge]
-  Bridge --> Cache[(SQLite cache)]
-  Cache -->|known commit| Skip[Skip duplicate Deployment]
-  Cache -->|new commit| Create[Create Deployment + status]
-  Create --> Cache
-```
-
 With `persistence.enabled=true` (the chart default):
 
 - A 1Gi `PersistentVolumeClaim` backs `/data`

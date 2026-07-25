@@ -38,44 +38,6 @@ SPDX-License-Identifier: Apache-2.0
 Secret changes roll the Deployment via `checksum/config` and `checksum/secret`
 pod annotations.
 
-Example `values.yaml` snippet:
-
-```yaml
-config:
-  clusterName: production-eu
-  environment: production
-  watchNamespace: flux-system
-  environmentURL: https://app.example.com
-  logURLTemplate: https://grafana.example.com/explore?commit={sha}
-
-github:
-  existingSecret: github-deployment-bridge
-
-persistence:
-  enabled: true
-  size: 1Gi
-
-networkPolicy:
-  enabled: true
-  ingress:
-    metricsFrom:
-      - namespaceSelector:
-          matchLabels:
-            name: monitoring
-  # allowKubeAPI: true (default) - TCP 6443 for the apiserver
-  #   (:443 covered by allowHTTPS; add to kubeAPIPorts if you disable HTTPS)
-  # egress.extraEgress: []  # optional CIDR-scoped kube-API rules
-serviceMonitor:
-  enabled: true
-  labels:
-    release: kube-prometheus-stack
-
-prometheusRule:
-  enabled: true
-  labels:
-    release: kube-prometheus-stack
-```
-
 When `config.watchNamespace` is set, the chart installs a namespaced `Role` in
 that namespace (plus a lease `Role` in the release namespace) instead of a
 `ClusterRole`. Flux objects and inventory workloads must share that namespace.
@@ -84,4 +46,4 @@ that namespace (plus a lease `Role` in the release namespace) instead of a
 `networkPolicy` + `metricsFrom` when the CNI enforces NetworkPolicy. See
 [Metrics](./metrics.md). Alert triage: [Runbook](../operations/runbook.md).
 
-Full install examples: [Install with Helm](../install/helm.md)
+Full install examples: [Install with Helm](../install/helm.md).

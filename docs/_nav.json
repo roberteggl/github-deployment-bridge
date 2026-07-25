@@ -2,7 +2,7 @@
   {
     "text": "Guide",
     "link": "/install/",
-    "activeMatch": "^/(install|configuration|architecture|development|releasing)"
+    "activeMatch": "^/(install|configuration|architecture|operations|development|releasing)"
   },
   {
     "text": "GitHub",

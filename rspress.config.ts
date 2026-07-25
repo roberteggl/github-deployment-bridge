@@ -21,7 +21,16 @@ const config: UserConfig = {
   plugins: [
     mermaid({
       mermaidConfig: {
-        theme: "neutral",
+        theme: "base",
+        themeVariables: {
+          primaryColor: "#d5ebe9",
+          primaryTextColor: "#14181c",
+          primaryBorderColor: "#1f6f6a",
+          lineColor: "#4a535c",
+          secondaryColor: "#ebe8e2",
+          tertiaryColor: "#f4f2ee",
+          fontFamily: "Instrument Sans, ui-sans-serif, system-ui, sans-serif",
+        },
         flowchart: { curve: "basis" },
       },
     }),
@@ -58,10 +67,32 @@ const config: UserConfig = {
     html: {
       tags: [
         {
+          tag: "link",
+          attrs: {
+            rel: "preconnect",
+            href: "https://fonts.googleapis.com",
+          },
+        },
+        {
+          tag: "link",
+          attrs: {
+            rel: "preconnect",
+            href: "https://fonts.gstatic.com",
+            crossorigin: true,
+          },
+        },
+        {
+          tag: "link",
+          attrs: {
+            rel: "stylesheet",
+            href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap",
+          },
+        },
+        {
           tag: "meta",
           attrs: {
             name: "theme-color",
-            content: "#111827",
+            content: "#1f6f6a",
           },
         },
       ],

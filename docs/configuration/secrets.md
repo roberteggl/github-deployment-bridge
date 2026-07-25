@@ -6,30 +6,19 @@ SPDX-License-Identifier: Apache-2.0
 
 # Secrets
 
-Credentials come from a Kubernetes Secret (never a PAT). Required keys:
+Credentials come from a Kubernetes Secret (never a PAT):
 
 | Key | Used as |
 |---|---|
 | `app-id` | `GITHUB_APP_ID` |
 | `installation-id` | `GITHUB_INSTALLATION_ID` |
-| `private-key` | PEM file mounted at `/github/private-key.pem` |
+| `private-key` | PEM mounted at `/github/private-key.pem` |
 
-Create it yourself and set `github.existingSecret`, or pass `github.appId`,
-`github.installationId`, and `github.privateKey` with
-`github.allowInsecureValues=true` so the chart creates the Secret. Prefer an
-externally managed Secret in production - inline values are also stored in the
-Helm release history.
+Prefer `github.existingSecret`. Inline `github.appId` / `installationId` /
+`privateKey` require `github.allowInsecureValues=true` and are also stored in
+Helm release history — fine for local/dev only.
 
-Chart-managed Secrets trigger a Deployment rollout via a `checksum/secret`
-annotation. With `github.existingSecret`, restart the Deployment (or use
-Reloader) after rotating credentials - see
-[Install → Secrets](../install/secrets.md).
+Chart-managed Secrets roll the Deployment via `checksum/secret`. With
+`existingSecret`, restart the Deployment (or Reloader) after rotating keys.
 
-```bash
-kubectl -n flux-system create secret generic github-deployment-bridge \
-  --from-literal=app-id=123456 \
-  --from-literal=installation-id=987654 \
-  --from-file=private-key=./github-app.pem
-```
-
-Step-by-step setup: [Install → Secrets](../install/secrets.md)
+Create and wire the Secret: [Install → Secrets](../install/secrets.md).

@@ -63,26 +63,6 @@ helm upgrade --install github-deployment-bridge \
 
 ## What the chart installs
 
-```mermaid
-flowchart TB
-  subgraph chart[Helm release]
-    D[Deployment]
-    SA[ServiceAccount + RBAC]
-    S[Secret]
-    PVC[PersistentVolumeClaim]
-    SVC[Service :8080 / :8081]
-    NP[NetworkPolicy optional]
-    SM[ServiceMonitor optional]
-    PR[PrometheusRule optional]
-  end
-  D --> Flux[Watch Kustomization / HelmRelease]
-  D --> GH[GitHub Deployments API]
-  S --> D
-  PVC --> D
-  SM --> SVC
-  PR --> SM
-```
-
 | Resource | Purpose |
 |---|---|
 | `Deployment` | Controller pod (`replicaCount: 1`, Recreate when PVC enabled) |
@@ -144,22 +124,24 @@ Requires the same CRDs (and kube-state-metrics for the NotReady alert). Set
 Prometheus `ruleSelector`. Pair with `serviceMonitor.enabled` so app metrics
 exist. Alert meanings and triage: [Runbook](../operations/runbook.md).
 
-## Configuration knobs
+## Configuration
 
 All runtime settings are environment variables. Helm `config.*` / `github.*`
-values map to those vars. Full reference: [Configuration](../configuration/).
+values map to those vars — see [Configuration](../configuration/) for the full
+reference (env vars, Helm map, metrics, registries).
 
 | Helm value | Env | Meaning |
 |---|---|---|
 | `config.clusterName` | `CLUSTER_NAME` | Logical name in logs |
-| `config.environment` | `ENVIRONMENT` | GitHub deployment environment name |
+| `config.environment` | `ENVIRONMENT` | GitHub deployment environment |
 | `config.watchNamespace` | `WATCH_NAMESPACE` | Limit to one namespace; empty = cluster-wide |
 | `config.environmentURL` | `ENVIRONMENT_URL` | Optional URL on deployment statuses |
 | `config.logURLTemplate` | `LOG_URL_TEMPLATE` | Optional log link; `{sha}` → commit |
-| `config.logLevel` | `LOG_LEVEL` | slog level (`debug` / `info` / `warn` / `error`) |
+| `config.logLevel` | `LOG_LEVEL` | `debug` / `info` / `warn` / `error` |
 | `config.githubBaseURL` | `GITHUB_BASE_URL` | GitHub Enterprise base URL |
-| `config.retry.maxAttempts` | `RETRY_MAX_ATTEMPTS` | GitHub/OCI retry attempts (default `5`) |
-| `config.retry.initialBackoff` | `RETRY_INITIAL_BACKOFF` | Initial backoff (default `500ms`) |
-| `config.retry.maxBackoff` | `RETRY_MAX_BACKOFF` | Max backoff (default `30s`) |
+
+Retry knobs (`config.retry.*`), leader election, and chart-only options
+(NetworkPolicy, ServiceMonitor, PrometheusRule) are listed in
+[Helm values map](../configuration/helm-values.md).
 
 Next: [Verify](./verify.md)

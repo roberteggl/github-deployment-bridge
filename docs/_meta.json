@@ -21,6 +21,11 @@
     "label": "Reference"
   },
   "architecture",
+  {
+    "type": "dir",
+    "name": "operations",
+    "label": "Operations"
+  },
   "development",
   "releasing"
 ]
