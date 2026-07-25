@@ -44,8 +44,10 @@ Read these before making non-trivial changes:
 | [docs/development.md](docs/development.md) | Build, test, local run, integration tests, Rspress docs |
 | [docs/releasing.md](docs/releasing.md) | Tag-driven release pipeline (git-cliff, GHCR, Helm) |
 
-Published docs site: Rspress (`rspress.config.ts`) → GitHub Pages via
-[`.github/workflows/docs.yml`](.github/workflows/docs.yml). Local: `npm ci && npm run dev`.
+Published docs site: Rspress (`rspress.config.ts`) →
+[deployment-bridge.eggl.dev](https://deployment-bridge.eggl.dev/) via GitHub
+Pages ([`.github/workflows/docs.yml`](.github/workflows/docs.yml)). Local:
+`npm ci && npm run dev`.
 
 ## Commits (DCO / `-s` required)
 

@@ -28,7 +28,8 @@ image scans (`HIGH`/`CRITICAL`, ignore unfixed) on every PR.
 ## Documentation site
 
 Docs are built with [Rspress](https://rspress.rs/) from this `docs/` tree and
-published to GitHub Pages on pushes to `main`.
+published to [deployment-bridge.eggl.dev](https://deployment-bridge.eggl.dev/)
+via GitHub Pages on pushes to `main`.
 
 ```bash
 npm ci

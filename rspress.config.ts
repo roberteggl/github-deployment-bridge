@@ -6,8 +6,6 @@ import * as path from "node:path";
 import { defineConfig, type UserConfig } from "@rspress/core";
 import mermaid from "rspress-plugin-mermaid";
 
-const isGitHubActions = process.env.GITHUB_ACTIONS === "true";
-
 const config: UserConfig = {
   root: path.join(__dirname, "docs"),
   title: "GitHub Deployment Bridge",
@@ -15,8 +13,8 @@ const config: UserConfig = {
     "Lightweight Kubernetes controller that bridges FluxCD reconciliations to the GitHub Deployments API.",
   icon: "/favicon.svg",
   logoText: "GitHub Deployment Bridge",
-  // Project Pages live at https://<user>.github.io/<repo>/
-  base: isGitHubActions ? "/github-deployment-bridge/" : "/",
+  // Published at https://deployment-bridge.eggl.dev/ (GitHub Pages custom domain)
+  base: "/",
   lang: "en",
   head: [
     ["meta", { name: "author", content: "Robert Eggl" }],

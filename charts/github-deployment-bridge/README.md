@@ -8,12 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 
 Helm chart for [GitHub Deployment Bridge](https://github.com/roberteggl/github-deployment-bridge) - a Kubernetes controller that reports FluxCD `Kustomization` / `HelmRelease` reconciliations to the GitHub Deployments API.
 
-**Docs:** [Install](https://roberteggl.github.io/github-deployment-bridge/install/) · [Configuration](https://roberteggl.github.io/github-deployment-bridge/configuration/) · [Architecture](https://roberteggl.github.io/github-deployment-bridge/architecture)
+**Docs:** [Install](https://deployment-bridge.eggl.dev/install/) · [Configuration](https://deployment-bridge.eggl.dev/configuration/) · [Architecture](https://deployment-bridge.eggl.dev/architecture)
 
 ## Prerequisites
 
 - Kubernetes cluster with [FluxCD](https://fluxcd.io/) (`Kustomization` / `HelmRelease` CRDs)
-- A [GitHub App](https://roberteggl.github.io/github-deployment-bridge/install/github-app) with **Deployments** (read & write), **Contents** (read), and **Metadata** (read)
+- A [GitHub App](https://deployment-bridge.eggl.dev/install/github-app) with **Deployments** (read & write), **Contents** (read), and **Metadata** (read)
 - Helm 3.8+ (OCI support)
 
 ## Install
@@ -55,11 +55,11 @@ helm upgrade --install github-deployment-bridge \
 | `serviceMonitor.enabled` | `false` | Opt-in Prometheus Operator ServiceMonitor |
 | `prometheusRule.enabled` | `false` | Opt-in PrometheusRule alerts |
 
-Full values reference: [Helm values](https://roberteggl.github.io/github-deployment-bridge/configuration/helm-values).
+Full values reference: [Helm values](https://deployment-bridge.eggl.dev/configuration/helm-values).
 
 ## Workload metadata
 
-Container images should include OCI labels (`org.opencontainers.image.source`, `org.opencontainers.image.revision`). Workloads opt in with `github-deployment-bridge.io/auto-report=true`. See [Architecture](https://roberteggl.github.io/github-deployment-bridge/architecture).
+Container images should include OCI labels (`org.opencontainers.image.source`, `org.opencontainers.image.revision`). Workloads opt in with `github-deployment-bridge.io/auto-report=true`. See [Architecture](https://deployment-bridge.eggl.dev/architecture).
 
 ## License
 

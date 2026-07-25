@@ -26,7 +26,7 @@ annotations:
   artifacthub.io/operatorCapabilities: Basic Install
   artifacthub.io/links: |
     - name: Documentation
-      url: https://roberteggl.github.io/github-deployment-bridge/
+      url: https://deployment-bridge.eggl.dev/
     - name: Artifact Hub
       url: https://artifacthub.io/packages/helm/github-deployment-bridge/github-deployment-bridge
     - name: support

@@ -72,7 +72,7 @@ prometheusRule:
   labels: {}
   annotations: {}
   # Published runbook; override if you mirror docs.
-  runbookURL: https://roberteggl.github.io/github-deployment-bridge/operations/runbook
+  runbookURL: https://deployment-bridge.eggl.dev/operations/runbook
   # rate(github_api_failures_total[15m]) threshold
   githubAPIFailureRate: 0
   # histogram_quantile(0.99, …) threshold in seconds
