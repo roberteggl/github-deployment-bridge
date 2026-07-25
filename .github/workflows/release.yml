@@ -208,6 +208,7 @@ jobs:
     outputs:
       image: ${{ steps.meta.outputs.tags }}
       digest: ${{ steps.digest.outputs.digest }}
+      attestation-url: ${{ steps.attest-image.outputs.attestation-url }}
     steps:
       - name: Download digests
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -278,6 +279,14 @@ jobs:
         run: |
           cosign sign "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.digest.outputs.digest }}"
 
+      - name: Attest image build provenance
+        id: attest-image
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.digest.outputs.digest }}
+          push-to-registry: true
+
   helm:
     name: Helm chart
     needs: [changelog, merge-image]
@@ -285,8 +294,12 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
     outputs:
       package: ${{ steps.package.outputs.file }}
+      digest: ${{ steps.push.outputs.digest }}
+      attestation-url: ${{ steps.attest-chart.outputs.attestation-url }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -316,10 +329,29 @@ jobs:
           echo "file=${file}" >> "$GITHUB_OUTPUT"
           echo "basename=$(basename "${file}")" >> "$GITHUB_OUTPUT"
 
+      - name: Attest chart package provenance
+        id: attest-chart
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: ${{ steps.package.outputs.file }}
+
       - name: Push chart OCI
+        id: push
         run: |
-          helm push "dist/${{ steps.package.outputs.basename }}" \
-            "oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts"
+          set -euo pipefail
+          output="$(helm push "dist/${{ steps.package.outputs.basename }}" \
+            "oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts" 2>&1)"
+          echo "${output}"
+          digest="$(printf '%s\n' "${output}" | awk '/^Digest:/ {print $2; exit}')"
+          test -n "${digest}"
+          echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+
+      - name: Attest chart OCI provenance
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ github.repository_owner }}/charts/github-deployment-bridge
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
 
       - name: Upload chart artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -360,8 +392,35 @@ jobs:
             echo "- Container image: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.changelog.outputs.version }}\`"
             echo "- Image digest: \`${{ needs.merge-image.outputs.digest }}\`"
             echo "- Helm chart (OCI): \`oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts/github-deployment-bridge:${{ needs.changelog.outputs.version }}\`"
+            echo "- Chart digest: \`${{ needs.helm.outputs.digest }}\`"
             echo
-            echo "Image is signed with Sigstore keyless Cosign."
+            echo "## Supply chain"
+            echo
+            echo "- Image signed with Sigstore keyless Cosign"
+            echo "- GitHub Artifact Attestations (SLSA provenance) for image + Helm chart"
+            echo "- Attestations: https://github.com/${{ github.repository }}/attestations"
+            if [ -n "${{ needs.merge-image.outputs.attestation-url }}" ]; then
+              echo "- Image attestation: ${{ needs.merge-image.outputs.attestation-url }}"
+            fi
+            if [ -n "${{ needs.helm.outputs.attestation-url }}" ]; then
+              echo "- Chart attestation: ${{ needs.helm.outputs.attestation-url }}"
+            fi
+            echo
+            echo "Verify:"
+            echo
+            echo '```bash'
+            echo "cosign verify \\"
+            echo "  --certificate-identity-regexp='https://github.com/${{ github.repository }}/.*' \\"
+            echo "  --certificate-oidc-issuer=https://token.actions.githubusercontent.com \\"
+            echo "  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.changelog.outputs.version }}"
+            echo
+            echo "gh attestation verify \\"
+            echo "  oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-image.outputs.digest }} \\"
+            echo "  --repo ${{ github.repository }}"
+            echo
+            echo "gh attestation verify dist/github-deployment-bridge-${{ needs.changelog.outputs.version }}.tgz \\"
+            echo "  --repo ${{ github.repository }}"
+            echo '```'
           } > RELEASE_BODY.md
 
       - name: Create GitHub Release

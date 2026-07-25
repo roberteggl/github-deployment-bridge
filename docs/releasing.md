@@ -17,10 +17,11 @@ Releases are fully automated on `v*` tag push via
    - `linux/amd64` on `ubuntu-24.04`
    - `linux/arm64` on `ubuntu-24.04-arm`
    - push-by-digest → merge manifest list on GHCR
-   - SBOM + provenance attestations
+   - BuildKit SBOM + provenance
    - Sigstore keyless Cosign signature
-4. **Helm** — package chart and push to `oci://ghcr.io/<owner>/charts`
-5. **GitHub Release** — cliff notes + image/chart artifact links (chart `.tgz` attached)
+   - GitHub Artifact Attestation (SLSA provenance, pushed to GHCR)
+4. **Helm** — package chart, attest `.tgz` + OCI chart, push to `oci://ghcr.io/<owner>/charts`
+5. **GitHub Release** — cliff notes + verify commands (chart `.tgz` attached)
 
 Prerelease tags containing `-` (e.g. `v0.2.0-rc.1`) skip `latest` and major tags.
 
@@ -72,11 +73,24 @@ helm install github-deployment-bridge \
   --set github.existingSecret=github-deployment-bridge
 ```
 
-## Verify signature
+## Verify signatures and attestations
+
+Attestations appear under
+[github.com/roberteggl/github-deployment-bridge/attestations](https://github.com/roberteggl/github-deployment-bridge/attestations).
 
 ```bash
+# Cosign (image signature)
 cosign verify \
   --certificate-identity-regexp='https://github.com/roberteggl/github-deployment-bridge/.*' \
   --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
   ghcr.io/roberteggl/github-deployment-bridge:0.1.0
+
+# GitHub Artifact Attestations (image)
+gh attestation verify \
+  oci://ghcr.io/roberteggl/github-deployment-bridge:0.1.0 \
+  --repo roberteggl/github-deployment-bridge
+
+# GitHub Artifact Attestations (Helm chart asset from the release)
+gh attestation verify github-deployment-bridge-0.1.0.tgz \
+  --repo roberteggl/github-deployment-bridge
 ```

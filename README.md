@@ -7,6 +7,8 @@ SPDX-License-Identifier: Apache-2.0
 # github-deployment-bridge
 
 [![REUSE status](https://api.reuse.software/badge/github.com/roberteggl/github-deployment-bridge)](https://api.reuse.software/info/github.com/roberteggl/github-deployment-bridge)
+[![Artifact Attestations](https://img.shields.io/badge/attestations-SLSA_provenance-2ea44f)](https://github.com/roberteggl/github-deployment-bridge/attestations)
+[![Cosign](https://img.shields.io/badge/cosign-keyless_signed-2ea44f)](docs/releasing.md#verify-signatures-and-attestations)
 
 A lightweight Kubernetes controller that bridges **FluxCD** reconciliations to the **GitHub Deployments API**.
 
@@ -119,7 +121,9 @@ helm install github-deployment-bridge \
   --set github.existingSecret=github-deployment-bridge
 ```
 
-Image: `ghcr.io/roberteggl/github-deployment-bridge:<version>` (multi-arch `amd64`/`arm64`, Cosign-signed).
+Image: `ghcr.io/roberteggl/github-deployment-bridge:<version>` (multi-arch `amd64`/`arm64`, Cosign-signed, SLSA-attested).
+
+Verify: [docs/releasing.md](docs/releasing.md#verify-signatures-and-attestations) · [Attestations](https://github.com/roberteggl/github-deployment-bridge/attestations)
 
 ## Development
 

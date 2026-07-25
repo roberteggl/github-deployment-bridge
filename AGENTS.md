@@ -78,9 +78,10 @@ Automated on `v*` tag push (see [docs/releasing.md](docs/releasing.md)):
 1. Validate (tests, Helm, chart version == tag, REUSE)
 2. Changelog via git-cliff (`cliff.toml`)
 3. Native multi-arch image (`ubuntu-24.04` + `ubuntu-24.04-arm`, no QEMU) → GHCR
-4. Cosign keyless sign + SBOM/provenance
-5. Helm chart → `oci://ghcr.io/<owner>/charts`
-6. GitHub Release (`softprops/action-gh-release`)
+4. Cosign keyless sign + BuildKit SBOM/provenance
+5. GitHub Artifact Attestations (`actions/attest-build-provenance`) for image + Helm chart
+6. Helm chart → `oci://ghcr.io/<owner>/charts`
+7. GitHub Release (`softprops/action-gh-release`)
 
 ```bash
 # Bump charts/github-deployment-bridge/Chart.yaml version + appVersion first
