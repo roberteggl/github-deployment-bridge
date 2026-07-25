@@ -3,7 +3,6 @@
 
 /*
  * Flat, restrained palette — no blue/purple gradients or glow washes.
- * Brand CTA and hero name share --rp-home-hero-title-bg (Rspress default).
  */
 
 :root {
@@ -13,12 +12,14 @@
   --rp-c-brand-dark: #111827;
   --rp-c-brand-darker: #030712;
   --rp-c-brand-tint: #11182714;
+  --gdb-ink: #111827;
+  --gdb-ink-soft: #1f2937;
 }
 
 html:not(.rp-dark) {
-  --rp-home-hero-secondary-color: #111827;
-  --rp-home-hero-title-color: transparent;
-  --rp-home-hero-title-bg: #111827;
+  --rp-home-hero-secondary-color: var(--gdb-ink);
+  --rp-home-hero-title-color: var(--gdb-ink);
+  --rp-home-hero-title-bg: var(--gdb-ink);
   --rp-home-background-bg: #ffffff;
   --rp-home-feature-bg: #ffffff;
 }
@@ -30,10 +31,12 @@ html.rp-dark {
   --rp-c-brand-dark: #f9fafb;
   --rp-c-brand-darker: #ffffff;
   --rp-c-brand-tint: #f9fafb1a;
+  --gdb-ink: #f3f4f6;
+  --gdb-ink-soft: #e5e7eb;
 
-  --rp-home-hero-secondary-color: #f9fafb;
-  --rp-home-hero-title-color: transparent;
-  --rp-home-hero-title-bg: #f3f4f6;
+  --rp-home-hero-secondary-color: var(--gdb-ink);
+  --rp-home-hero-title-color: var(--gdb-ink);
+  --rp-home-hero-title-bg: var(--gdb-ink);
   --rp-home-background-bg: #0b0d10;
   --rp-home-feature-bg: #12151a;
 }
@@ -42,19 +45,32 @@ html.rp-dark {
   display: none !important;
 }
 
+/* Plain ink text — do not use background-clip (Rspress gradient trick). */
 .rp-home-hero__title-brand {
-  background: var(--rp-home-hero-title-bg) !important;
+  background: none !important;
   background-image: none !important;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+  -webkit-background-clip: border-box !important;
+  background-clip: border-box !important;
+  -webkit-text-fill-color: var(--gdb-ink) !important;
+  color: var(--gdb-ink) !important;
+  width: auto !important;
+  max-width: 100%;
 }
 
 .rp-button--brand,
 .rp-button--brand:hover {
-  background: var(--rp-home-hero-title-bg) !important;
+  background: var(--gdb-ink) !important;
   background-image: none !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
   box-shadow: none !important;
   filter: none !important;
+}
+
+html.rp-dark .rp-button--brand,
+html.rp-dark .rp-button--brand:hover {
+  color: #0b0d10 !important;
+  -webkit-text-fill-color: #0b0d10 !important;
 }
 
 .rp-button--brand:hover {
