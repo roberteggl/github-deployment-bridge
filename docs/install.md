@@ -109,7 +109,7 @@ manager or sealed/SOPS secret in production):
 ```bash
 helm upgrade --install github-deployment-bridge \
   oci://ghcr.io/roberteggl/charts/github-deployment-bridge \
-  --version 0.1.0 \
+  --version 1.2.0 \
   --namespace flux-system \
   --set github.appId=123456 \
   --set github.installationId=987654 \
@@ -152,7 +152,7 @@ default if you scale later with a shared/ReadWriteMany volume.
 # Secret must already exist (see above)
 helm upgrade --install github-deployment-bridge \
   oci://ghcr.io/roberteggl/charts/github-deployment-bridge \
-  --version 0.1.0 \
+  --version 1.2.0 \
   --namespace flux-system \
   --create-namespace \
   --set github.existingSecret=github-deployment-bridge \
@@ -195,7 +195,7 @@ persistence:
 ```bash
 helm upgrade --install github-deployment-bridge \
   oci://ghcr.io/roberteggl/charts/github-deployment-bridge \
-  --version 0.1.0 \
+  --version 1.2.0 \
   --namespace flux-system \
   -f values-production.yaml
 ```
