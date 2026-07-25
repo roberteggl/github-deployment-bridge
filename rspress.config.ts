@@ -3,12 +3,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as path from "node:path";
-import { defineConfig } from "@rspress/core";
+import { defineConfig, type UserConfig } from "@rspress/core";
 import mermaid from "rspress-plugin-mermaid";
 
 const isGitHubActions = process.env.GITHUB_ACTIONS === "true";
 
-export default defineConfig({
+const config: UserConfig = {
   root: path.join(__dirname, "docs"),
   title: "GitHub Deployment Bridge",
   description:
@@ -27,7 +27,9 @@ export default defineConfig({
     }),
   ],
   markdown: {
-    checkDeadLinks: true,
+    link: {
+      checkDeadLinks: true,
+    },
   },
   route: {
     cleanUrls: true,
@@ -64,4 +66,6 @@ export default defineConfig({
       ],
     },
   },
-});
+};
+
+export default defineConfig(config);
