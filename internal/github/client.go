@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/google/go-github/v75/github"
+	"github.com/google/go-github/v89/github"
 
 	"github.com/roberteggl/github-deployment-bridge/internal/metrics"
 	"github.com/roberteggl/github-deployment-bridge/pkg/retry"
@@ -82,17 +82,20 @@ func NewAppClient(opts Options) (*AppClient, error) {
 	}
 
 	httpClient := &http.Client{Transport: itr, Timeout: 30 * time.Second}
-	client := github.NewClient(httpClient)
-
+	clientOpts := []github.ClientOptionsFunc{
+		github.WithHTTPClient(httpClient),
+	}
 	if opts.BaseURL != "" {
 		// Accept either https://ghe.example.com or https://ghe.example.com/api/v3.
 		baseURL := strings.TrimRight(opts.BaseURL, "/")
 		baseURL = strings.TrimSuffix(baseURL, "/api/v3")
 		itr.BaseURL = baseURL + "/api/v3"
-		client, err = client.WithEnterpriseURLs(baseURL+"/", baseURL+"/")
-		if err != nil {
-			return nil, fmt.Errorf("configure GitHub enterprise URLs: %w", err)
-		}
+		clientOpts = append(clientOpts, github.WithEnterpriseURLs(baseURL+"/", baseURL+"/"))
+	}
+
+	client, err := github.NewClient(clientOpts...)
+	if err != nil {
+		return nil, fmt.Errorf("create GitHub client: %w", err)
 	}
 
 	cfg := opts.Retry
@@ -116,12 +119,11 @@ func (c *AppClient) CreateDeployment(ctx context.Context, req DeploymentRequest)
 		if desc == "" {
 			desc = "Deployed by FluxCD"
 		}
-		emptyContexts := []string{}
-		ghReq := &github.DeploymentRequest{
-			Ref:                   github.Ptr(req.Ref),
+		ghReq := github.DeploymentRequest{
+			Ref:                   req.Ref,
 			Environment:           github.Ptr(req.Environment),
 			AutoMerge:             github.Ptr(false),
-			RequiredContexts:      &emptyContexts,
+			RequiredContexts:      []string{},
 			ProductionEnvironment: github.Ptr(req.ProductionEnvironment),
 			Description:           github.Ptr(desc),
 		}
@@ -131,10 +133,10 @@ func (c *AppClient) CreateDeployment(ctx context.Context, req DeploymentRequest)
 		if err != nil {
 			return classifyGitHubError(err, resp)
 		}
-		if dep == nil || dep.ID == nil {
+		if dep == nil || dep.GetID() == 0 {
 			return retry.Permanent(fmt.Errorf("github returned deployment without id"))
 		}
-		result = &DeploymentResult{ID: *dep.ID}
+		result = &DeploymentResult{ID: dep.GetID()}
 		return nil
 	})
 	if err != nil {
@@ -151,8 +153,8 @@ func (c *AppClient) CreateDeploymentStatus(ctx context.Context, req DeploymentSt
 		if desc == "" {
 			desc = "Flux reconciliation succeeded"
 		}
-		ghReq := &github.DeploymentStatusRequest{
-			State:       github.Ptr(req.State),
+		ghReq := github.DeploymentStatusRequest{
+			State:       req.State,
 			Description: github.Ptr(desc),
 		}
 		if req.EnvironmentURL != "" {
