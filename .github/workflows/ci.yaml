@@ -152,21 +152,54 @@ jobs:
             exit 1
           fi
 
-      - name: Template namespaced RBAC and NetworkPolicy
+      - name: Template namespaced RBAC, NetworkPolicy, ServiceMonitor
         run: |
           out="$(helm template github-deployment-bridge charts/github-deployment-bridge \
             --set github.appId=1 \
             --set github.installationId=1 \
             --set github.privateKey=ci-fake-key \
             --set config.watchNamespace=flux-system \
-            --set networkPolicy.enabled=true)"
+            --set networkPolicy.enabled=true \
+            --set serviceMonitor.enabled=true \
+            --set serviceMonitor.labels.release=kube-prometheus-stack \
+            --set prometheusRule.enabled=true \
+            --set prometheusRule.labels.release=kube-prometheus-stack \
+            --set config.retry.maxAttempts=8 \
+            --set config.retry.initialBackoff=1s \
+            --set config.retry.maxBackoff=60s)"
           echo "${out}" | grep -q 'kind: Role'
           echo "${out}" | grep -q 'leader-election'
           echo "${out}" | grep -q 'kind: NetworkPolicy'
+          echo "${out}" | grep -q 'kind: ServiceMonitor'
+          echo "${out}" | grep -q 'kind: PrometheusRule'
+          echo "${out}" | grep -q 'alert: GitHubDeploymentBridgeNotReady'
+          echo "${out}" | grep -q 'alert: GitHubDeploymentBridgeErrors'
+          echo "${out}" | grep -q 'port: metrics'
+          echo "${out}" | grep -q 'release: kube-prometheus-stack'
+          echo "${out}" | grep -q 'name: RETRY_MAX_ATTEMPTS'
+          echo "${out}" | grep -q 'value: "8"'
+          echo "${out}" | grep -q 'name: RETRY_INITIAL_BACKOFF'
+          echo "${out}" | grep -q 'value: "1s"'
+          echo "${out}" | grep -q 'name: RETRY_MAX_BACKOFF'
+          echo "${out}" | grep -q 'value: "60s"'
           if echo "${out}" | grep -q 'kind: ClusterRole'; then
             echo "expected no ClusterRole when watchNamespace is set"
             exit 1
           fi
+          default="$(helm template github-deployment-bridge charts/github-deployment-bridge \
+            --set github.appId=1 \
+            --set github.installationId=1 \
+            --set github.privateKey=ci-fake-key)"
+          if echo "${default}" | grep -q 'kind: ServiceMonitor'; then
+            echo "expected no ServiceMonitor when serviceMonitor.enabled is false"
+            exit 1
+          fi
+          if echo "${default}" | grep -q 'kind: PrometheusRule'; then
+            echo "expected no PrometheusRule when prometheusRule.enabled is false"
+            exit 1
+          fi
+          echo "${default}" | grep -q 'name: RETRY_MAX_ATTEMPTS'
+          echo "${default}" | grep -q 'value: "5"'
 
   container:
     name: Container (${{ matrix.name }})

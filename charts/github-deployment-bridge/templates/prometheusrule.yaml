@@ -1,0 +1,97 @@
+# SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+{{- if .Values.prometheusRule.enabled }}
+{{- $fullname := include "github-deployment-bridge.fullname" . -}}
+{{- $ns := .Release.Namespace -}}
+{{- $runbook := .Values.prometheusRule.runbookURL | default "https://roberteggl.github.io/github-deployment-bridge/operations/runbook" -}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ $fullname }}
+  labels:
+    {{- include "github-deployment-bridge.labels" . | nindent 4 }}
+    {{- with .Values.prometheusRule.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.prometheusRule.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  groups:
+    - name: github-deployment-bridge
+      rules:
+        - alert: GitHubDeploymentBridgeNotReady
+          expr: |
+            kube_deployment_status_replicas_unavailable{
+              namespace="{{ $ns }}",
+              deployment="{{ $fullname }}"
+            } > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: GitHub Deployment Bridge has unavailable replicas
+            description: >-
+              Deployment {{ $fullname }} in {{ $ns }} has
+              {{ "{{ $value }}" }} unavailable replica(s) for more than 5m
+              (PVC attach stall, crash loop, or image pull).
+            runbook_url: {{ printf "%s#bridge-not-ready" $runbook | quote }}
+
+        - alert: GitHubDeploymentBridgeErrors
+          expr: |
+            rate(deployment_errors_total{
+              namespace="{{ $ns }}",
+              pod=~"{{ $fullname }}-.*"
+            }[15m]) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Bridge is emitting GitHub Deployment error statuses
+            description: >-
+              deployment_errors_total is increasing for {{ $fullname }} in {{ $ns }}
+              — bridge-only faults (not Flux app failures). Check App credentials,
+              cache, and logs.
+            runbook_url: {{ printf "%s#bridge-errors" $runbook | quote }}
+
+        - alert: GitHubDeploymentBridgeGitHubAPIFailures
+          expr: |
+            rate(github_api_failures_total{
+              namespace="{{ $ns }}",
+              pod=~"{{ $fullname }}-.*"
+            }[15m]) > {{ .Values.prometheusRule.githubAPIFailureRate }}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Sustained GitHub API failures from the bridge
+            description: >-
+              github_api_failures_total rate for {{ $fullname }} in {{ $ns }} is above
+              {{ .Values.prometheusRule.githubAPIFailureRate }} for 15m
+              (auth, permissions, rate limits, or GitHub outage).
+            runbook_url: {{ printf "%s#github-api-failures" $runbook | quote }}
+
+        - alert: GitHubDeploymentBridgeGitHubAPIHighLatency
+          expr: |
+            histogram_quantile(
+              0.99,
+              sum by (le) (
+                rate(github_api_latency_seconds_bucket{
+                  namespace="{{ $ns }}",
+                  pod=~"{{ $fullname }}-.*"
+                }[15m])
+              )
+            ) > {{ .Values.prometheusRule.githubAPILatencyP99Seconds }}
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: GitHub API p99 latency is high
+            description: >-
+              p99 github_api_latency_seconds for {{ $fullname }} in {{ $ns }} is above
+              {{ .Values.prometheusRule.githubAPILatencyP99Seconds }}s for 15m.
+            runbook_url: {{ printf "%s#github-api-high-latency" $runbook | quote }}
+{{- end }}

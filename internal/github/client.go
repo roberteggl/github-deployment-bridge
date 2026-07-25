@@ -8,8 +8,10 @@ package github
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -267,15 +269,83 @@ func deploymentPayloadMatches(raw json.RawMessage, expected map[string]any) bool
 }
 
 func classifyGitHubError(err error, resp *github.Response) error {
+	if err == nil {
+		return nil
+	}
+
+	// Primary and secondary rate limits are retryable even when the status is
+	// 403 (common for secondary limits). Prefer Retry-After / rate reset.
+	var abuse *github.AbuseRateLimitError
+	var rateLimit *github.RateLimitError
+	if errors.As(err, &abuse) || errors.As(err, &rateLimit) {
+		if d, ok := githubRetryAfter(err, resp); ok {
+			return retry.After(err, d)
+		}
+		return err
+	}
+
 	if resp == nil {
 		return err
 	}
 	// Retry rate limits and server errors; treat other 4xx as permanent.
 	if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
+		if d, ok := githubRetryAfter(err, resp); ok {
+			return retry.After(err, d)
+		}
 		return err
 	}
 	if resp.StatusCode >= 400 && resp.StatusCode < 500 {
 		return retry.Permanent(err)
 	}
 	return err
+}
+
+// githubRetryAfter extracts a wait from AbuseRateLimitError, RateLimitError,
+// Retry-After, or X-RateLimit-Reset.
+func githubRetryAfter(err error, resp *github.Response) (time.Duration, bool) {
+	var abuse *github.AbuseRateLimitError
+	if errors.As(err, &abuse) && abuse.RetryAfter != nil && *abuse.RetryAfter > 0 {
+		return *abuse.RetryAfter, true
+	}
+
+	var rateLimit *github.RateLimitError
+	if errors.As(err, &rateLimit) {
+		if d := time.Until(rateLimit.Rate.Reset.Time); d > 0 {
+			return d, true
+		}
+	}
+
+	if resp == nil || resp.Response == nil {
+		return 0, false
+	}
+	if d, ok := parseRetryAfterHeader(resp.Header.Get("Retry-After")); ok {
+		return d, true
+	}
+	if !resp.Rate.Reset.Time.IsZero() {
+		if d := time.Until(resp.Rate.Reset.Time); d > 0 {
+			return d, true
+		}
+	}
+	return 0, false
+}
+
+func parseRetryAfterHeader(v string) (time.Duration, bool) {
+	if v == "" {
+		return 0, false
+	}
+	if seconds, err := strconv.Atoi(v); err == nil {
+		if seconds < 0 {
+			return 0, false
+		}
+		return time.Duration(seconds) * time.Second, true
+	}
+	t, err := http.ParseTime(v)
+	if err != nil {
+		return 0, false
+	}
+	d := time.Until(t)
+	if d < 0 {
+		return 0, false
+	}
+	return d, true
 }

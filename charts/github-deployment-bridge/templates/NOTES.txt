@@ -25,6 +25,16 @@ Persistence: /data is backed by a PVC. Deployment strategy is Recreate so
 
 NetworkPolicy: enabled (metrics/probes ingress; DNS + HTTPS egress by default).
 {{- end }}
+{{- if .Values.serviceMonitor.enabled }}
+
+ServiceMonitor: enabled (Prometheus Operator scrapes port metrics → /metrics).
+  /metrics is unauthenticated; restrict scrapers with networkPolicy.ingress.metricsFrom.
+{{- end }}
+{{- if .Values.prometheusRule.enabled }}
+
+PrometheusRule: enabled (NotReady, bridge errors, GitHub API failures/latency).
+  Triage: https://roberteggl.github.io/github-deployment-bridge/operations/runbook
+{{- end }}
 
 Ensure your container images include OCI labels:
   org.opencontainers.image.source

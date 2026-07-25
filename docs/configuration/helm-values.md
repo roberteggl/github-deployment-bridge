@@ -16,12 +16,19 @@ SPDX-License-Identifier: Apache-2.0
 | `config.logLevel` | `LOG_LEVEL` |
 | `config.leaderElection` | `LEADER_ELECTION` |
 | `config.githubBaseURL` | `GITHUB_BASE_URL` |
+| `config.retry.maxAttempts` | `RETRY_MAX_ATTEMPTS` |
+| `config.retry.initialBackoff` | `RETRY_INITIAL_BACKOFF` |
+| `config.retry.maxBackoff` | `RETRY_MAX_BACKOFF` |
 | _(fixed by chart)_ | `DATABASE=/data/cache.db` |
 | `github.existingSecret` / chart Secret | `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, key file |
 | `rbac.create` | _(chart only)_ — emit RBAC |
 | `networkPolicy.enabled` | _(chart only)_ — emit NetworkPolicy |
 | `networkPolicy.ingress.metricsFrom` | _(chart only)_ — optional scrape peers |
 | `networkPolicy.egress.allowDNS` / `allowHTTPS` / `extraEgress` | _(chart only)_ |
+| `serviceMonitor.enabled` | _(chart only)_ — emit Prometheus Operator ServiceMonitor |
+| `serviceMonitor.labels` / `interval` / `scrapeTimeout` / … | _(chart only)_ — scrape tuning |
+| `prometheusRule.enabled` | _(chart only)_ — emit PrometheusRule alerts |
+| `prometheusRule.labels` / thresholds / `runbookURL` | _(chart only)_ — alert tuning |
 
 Example `values.yaml` snippet:
 
@@ -42,10 +49,29 @@ persistence:
 
 networkPolicy:
   enabled: true
+  ingress:
+    metricsFrom:
+      - namespaceSelector:
+          matchLabels:
+            name: monitoring
+
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack
+
+prometheusRule:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack
 ```
 
 When `config.watchNamespace` is set, the chart installs a namespaced `Role` in
 that namespace (plus a lease `Role` in the release namespace) instead of a
 `ClusterRole`. Flux objects and inventory workloads must share that namespace.
+
+`/metrics` is unauthenticated HTTP. Pair `serviceMonitor.enabled` with
+`networkPolicy` + `metricsFrom` when the CNI enforces NetworkPolicy. See
+[Metrics](./metrics.md). Alert triage: [Runbook](../operations/runbook.md).
 
 Full install examples: [Install with Helm](../install/helm.md)

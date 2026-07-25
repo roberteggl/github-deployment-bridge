@@ -88,11 +88,15 @@ Why a PVC: SQLite at `/data/cache.db` deduplicates
 
 | Endpoint | Purpose |
 |---|---|
-| `/metrics` | Prometheus metrics |
+| `/metrics` | Prometheus metrics (unauthenticated HTTP) |
 | `/healthz` | Liveness |
 | `/readyz` | Readiness |
 
 Metrics include `deployments_created_total`, `deployment_status_updates_total`, `deployment_failures_total`, `deployment_errors_total`, `deployment_duplicates_skipped_total`, `deployment_inactive_total`, `github_api_requests_total`, `github_api_failures_total`, `github_api_latency_seconds`, and `oci_requests_total`.
+
+Helm: optional `serviceMonitor.enabled` / `prometheusRule.enabled` for Prometheus
+Operator; restrict scrape peers with `networkPolicy` + `metricsFrom`
+([Metrics](docs/configuration/metrics.md), [Runbook](docs/operations/runbook.md)).
 
 Image: `ghcr.io/roberteggl/github-deployment-bridge:<version>` (multi-arch `amd64`/`arm64`, Cosign-signed, SLSA-attested).
 

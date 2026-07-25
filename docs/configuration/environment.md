@@ -25,6 +25,6 @@ SPDX-License-Identifier: Apache-2.0
 | `GITHUB_BASE_URL` | no | | GitHub Enterprise API base URL |
 | `RETRY_MAX_ATTEMPTS` | no | `5` | Retry attempts for GitHub/OCI calls |
 | `RETRY_INITIAL_BACKOFF` | no | `500ms` | Initial retry backoff |
-| `RETRY_MAX_BACKOFF` | no | `30s` | Maximum retry backoff |
+| `RETRY_MAX_BACKOFF` | no | `30s` | Maximum exponential backoff (GitHub `Retry-After` may wait longer, up to 5m) |
 
 See also: [Helm values map](./helm-values.md)

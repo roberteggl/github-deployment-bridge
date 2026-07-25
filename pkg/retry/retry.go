@@ -13,6 +13,9 @@ import (
 	"time"
 )
 
+// Hard cap so a malicious or mistaken Retry-After cannot block a reconcile for hours.
+const retryAfterCap = 5 * time.Minute
+
 // Config controls retry behaviour.
 type Config struct {
 	MaxAttempts int
@@ -33,6 +36,9 @@ func Default() Config {
 
 // Do executes fn until it succeeds or attempts are exhausted.
 // Permanent errors should be returned wrapped with Permanent so retries stop.
+// Transient errors may be wrapped with After to honor server-provided wait times
+// (for example GitHub Retry-After); that delay overrides exponential backoff up
+// to retryAfterCap and is not limited by Config.Max.
 func Do(ctx context.Context, cfg Config, fn func(context.Context) error) error {
 	if cfg.MaxAttempts < 1 {
 		cfg.MaxAttempts = 1
@@ -65,10 +71,9 @@ func Do(ctx context.Context, cfg Config, fn func(context.Context) error) error {
 			break
 		}
 
-		jitter := time.Duration(rand.Float64() * float64(delay) * 0.2)
-		wait := delay + jitter
-		if wait > cfg.Max {
-			wait = cfg.Max
+		wait := backoffWait(delay, cfg.Max)
+		if suggested, ok := SuggestedDelay(lastErr); ok {
+			wait = suggestedWait(suggested)
 		}
 
 		timer := time.NewTimer(wait)
@@ -87,6 +92,27 @@ func Do(ctx context.Context, cfg Config, fn func(context.Context) error) error {
 		}
 	}
 	return fmt.Errorf("retry exhausted after %d attempts: %w", cfg.MaxAttempts, lastErr)
+}
+
+func backoffWait(delay, max time.Duration) time.Duration {
+	jitter := time.Duration(rand.Float64() * float64(delay) * 0.2)
+	wait := delay + jitter
+	if wait > max {
+		wait = max
+	}
+	return wait
+}
+
+func suggestedWait(suggested time.Duration) time.Duration {
+	if suggested < 0 {
+		suggested = 0
+	}
+	if suggested > retryAfterCap {
+		suggested = retryAfterCap
+	}
+	// Small jitter so concurrent reconcilers do not stampede after a shared reset.
+	jitter := time.Duration(rand.Float64() * float64(suggested) * 0.05)
+	return suggested + jitter
 }
 
 // permanentError marks an error as non-retryable.
@@ -109,4 +135,35 @@ func Permanent(err error) error {
 func IsPermanent(err error) bool {
 	var p *permanentError
 	return errors.As(err, &p)
+}
+
+// delayError carries a server-suggested wait before the next attempt.
+type delayError struct {
+	err   error
+	after time.Duration
+}
+
+func (e *delayError) Error() string { return e.err.Error() }
+func (e *delayError) Unwrap() error { return e.err }
+
+// After wraps err with a suggested delay before the next retry (for example
+// from an HTTP Retry-After header). Config.Max does not cap this delay; a
+// package safety cap of 5 minutes applies instead.
+func After(err error, d time.Duration) error {
+	if err == nil {
+		return nil
+	}
+	if d < 0 {
+		d = 0
+	}
+	return &delayError{err: err, after: d}
+}
+
+// SuggestedDelay reports a server-suggested wait wrapped with After.
+func SuggestedDelay(err error) (time.Duration, bool) {
+	var d *delayError
+	if errors.As(err, &d) {
+		return d.after, true
+	}
+	return 0, false
 }

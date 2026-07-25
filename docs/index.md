@@ -35,7 +35,7 @@ features:
     icon: "△"
     span: 4
   - title: Built for operators
-    details: Helm chart, Prometheus metrics, GitHub Enterprise base URL, and dockerconfig auth for private registries.
+    details: Helm chart, Prometheus metrics, optional ServiceMonitor and PrometheusRule with a runbook, GitHub Enterprise base URL, and dockerconfig auth for private registries.
     icon: "▢"
     span: 4
 ---

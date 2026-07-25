@@ -29,3 +29,4 @@ flowchart LR
 | [GitHub App permissions](./github-app.md) | Required App scopes |
 | [Private registries](./registries.md) | Docker config for OCI label reads |
 | [Metrics](./metrics.md) | Prometheus metrics |
+| [Operations runbook](../operations/runbook.md) | Alert triage (optional PrometheusRule) |

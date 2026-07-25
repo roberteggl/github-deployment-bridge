@@ -72,11 +72,15 @@ flowchart TB
     PVC[PersistentVolumeClaim]
     SVC[Service :8080 / :8081]
     NP[NetworkPolicy optional]
+    SM[ServiceMonitor optional]
+    PR[PrometheusRule optional]
   end
   D --> Flux[Watch Kustomization / HelmRelease]
   D --> GH[GitHub Deployments API]
   S --> D
   PVC --> D
+  SM --> SVC
+  PR --> SM
 ```
 
 | Resource | Purpose |
@@ -87,6 +91,8 @@ flowchart TB
 | `PersistentVolumeClaim` | SQLite duplicate-prevention cache |
 | `Service` | Metrics (`:8080`) and probes (`:8081`) |
 | `NetworkPolicy` | Optional; metrics/probes ingress + DNS/HTTPS egress |
+| `ServiceMonitor` | Optional; Prometheus Operator scrape of `/metrics` |
+| `PrometheusRule` | Optional; high-signal alerts (see [Runbook](../operations/runbook.md)) |
 
 ### RBAC modes
 
@@ -117,6 +123,23 @@ Set `networkPolicy.enabled: true` to restrict the pod:
 - **Egress:** DNS + HTTPS by default (GitHub API, registries); add
   `egress.extraEgress` for kube-apiserver CIDRs / `:6443` if needed
 
+### ServiceMonitor (optional)
+
+Requires the Prometheus Operator CRDs (`monitoring.coreos.com/v1`). Set
+`serviceMonitor.enabled: true` (and usually `serviceMonitor.labels` to match
+your Prometheus `serviceMonitorSelector`).
+
+`/metrics` is unauthenticated HTTP. Restrict scrape peers with
+`networkPolicy.ingress.metricsFrom` when NetworkPolicy is enforced. Details:
+[Metrics](../configuration/metrics.md).
+
+### PrometheusRule (optional)
+
+Requires the same CRDs (and kube-state-metrics for the NotReady alert). Set
+`prometheusRule.enabled: true` with `prometheusRule.labels` matching your
+Prometheus `ruleSelector`. Pair with `serviceMonitor.enabled` so app metrics
+exist. Alert meanings and triage: [Runbook](../operations/runbook.md).
+
 ## Configuration knobs
 
 All runtime settings are environment variables. Helm `config.*` / `github.*`
@@ -131,5 +154,8 @@ values map to those vars. Full reference: [Configuration](../configuration/).
 | `config.logURLTemplate` | `LOG_URL_TEMPLATE` | Optional log link; `{sha}` → commit |
 | `config.logLevel` | `LOG_LEVEL` | slog level (`debug` / `info` / `warn` / `error`) |
 | `config.githubBaseURL` | `GITHUB_BASE_URL` | GitHub Enterprise base URL |
+| `config.retry.maxAttempts` | `RETRY_MAX_ATTEMPTS` | GitHub/OCI retry attempts (default `5`) |
+| `config.retry.initialBackoff` | `RETRY_INITIAL_BACKOFF` | Initial backoff (default `500ms`) |
+| `config.retry.maxBackoff` | `RETRY_MAX_BACKOFF` | Max backoff (default `30s`) |
 
 Next: [Verify](./verify.md)

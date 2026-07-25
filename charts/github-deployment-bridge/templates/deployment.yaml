@@ -67,6 +67,12 @@ spec:
               value: ":8081"
             - name: LEADER_ELECTION
               value: {{ .Values.config.leaderElection | quote }}
+            - name: RETRY_MAX_ATTEMPTS
+              value: {{ .Values.config.retry.maxAttempts | quote }}
+            - name: RETRY_INITIAL_BACKOFF
+              value: {{ .Values.config.retry.initialBackoff | quote }}
+            - name: RETRY_MAX_BACKOFF
+              value: {{ .Values.config.retry.maxBackoff | quote }}
             - name: GITHUB_APP_ID
               valueFrom:
                 secretKeyRef:

@@ -38,6 +38,35 @@ networkPolicy:
     # Extra egress rules (e.g. kube API on :6443). Appended as-is under egress.
     extraEgress: []
 
+# Opt-in Prometheus Operator ServiceMonitor. Requires the monitoring.coreos.com
+# CRDs. /metrics is unauthenticated HTTP — pair with networkPolicy + metricsFrom
+# when the CNI enforces NetworkPolicy.
+serviceMonitor:
+  enabled: false
+  # Extra labels so a Prometheus instance's serviceMonitorSelector matches
+  # (e.g. { release: kube-prometheus-stack }).
+  labels: {}
+  annotations: {}
+  interval: 30s
+  scrapeTimeout: 10s
+  honorLabels: false
+  metricRelabelings: []
+  relabelings: []
+
+# Opt-in PrometheusRule. Requires monitoring.coreos.com CRDs and (for the
+# NotReady alert) kube-state-metrics. Pair with serviceMonitor.enabled so app
+# metrics exist; match ruleSelector via labels.
+prometheusRule:
+  enabled: false
+  labels: {}
+  annotations: {}
+  # Published runbook; override if you mirror docs.
+  runbookURL: https://roberteggl.github.io/github-deployment-bridge/operations/runbook
+  # rate(github_api_failures_total[15m]) threshold
+  githubAPIFailureRate: 0
+  # histogram_quantile(0.99, …) threshold in seconds
+  githubAPILatencyP99Seconds: 5
+
 podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "8080"
@@ -95,6 +124,12 @@ config:
   logLevel: info
   leaderElection: true
   githubBaseURL: ""
+  # GitHub API and OCI registry retry backoff (maps to RETRY_* env vars).
+  retry:
+    maxAttempts: 5
+    # Go duration strings, e.g. 500ms, 1s, 30s
+    initialBackoff: 500ms
+    maxBackoff: 30s
 
 github:
   # Name of an existing Secret containing:

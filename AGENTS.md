@@ -38,6 +38,7 @@ Read these before making non-trivial changes:
 | [README.md](README.md) | Overview, quick start |
 | [docs/install/](docs/install/) | Cluster install, GitHub App, secrets, PVC, Helm |
 | [docs/configuration/](docs/configuration/) | Env vars, Helm values, permissions, registries, metrics |
+| [docs/operations/](docs/operations/) | Alert runbook (optional PrometheusRule) |
 | [docs/architecture.md](docs/architecture.md) | Event flow, lifecycle, workload discovery, metadata (OCI + annotations) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | DCO, Conventional Commits, PR process |
 | [docs/development.md](docs/development.md) | Build, test, local run, integration tests, Rspress docs |
