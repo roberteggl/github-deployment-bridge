@@ -77,12 +77,21 @@ spec:
             - name: GITHUB_BASE_URL
               value: {{ .Values.config.githubBaseURL | quote }}
             {{- end }}
+            {{- if .Values.registry.existingDockerConfigSecret }}
+            - name: DOCKER_CONFIG
+              value: /var/run/secrets/docker
+            {{- end }}
           volumeMounts:
             - name: data
               mountPath: /data
             - name: github
               mountPath: /github
               readOnly: true
+            {{- if .Values.registry.existingDockerConfigSecret }}
+            - name: docker-config
+              mountPath: /var/run/secrets/docker
+              readOnly: true
+            {{- end }}
           livenessProbe:
             httpGet:
               path: {{ .Values.probes.liveness.path }}
@@ -111,6 +120,14 @@ spec:
             items:
               - key: private-key
                 path: private-key.pem
+        {{- if .Values.registry.existingDockerConfigSecret }}
+        - name: docker-config
+          secret:
+            secretName: {{ .Values.registry.existingDockerConfigSecret | quote }}
+            items:
+              - key: {{ .Values.registry.dockerConfigKey | quote }}
+                path: config.json
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

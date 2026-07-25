@@ -83,6 +83,14 @@ github:
   # PEM contents of the GitHub App private key.
   privateKey: ""
 
+# Private OCI registries (e.g. GHCR). Used when inspecting workload image
+# labels - separate from imagePullSecrets (which only pull this chart's image).
+registry:
+  # Existing kubernetes.io/dockerconfigjson Secret (often the same one Flux uses).
+  existingDockerConfigSecret: ""
+  # Key inside the Secret; default matches kubernetes.io/dockerconfigjson.
+  dockerConfigKey: ".dockerconfigjson"
+
 probes:
   liveness:
     path: /healthz

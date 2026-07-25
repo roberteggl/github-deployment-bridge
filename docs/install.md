@@ -250,9 +250,28 @@ should see a new GitHub Deployment (and `success` status) for that commit under
 ## Private image registries
 
 The bridge only fetches the image **manifest and config blob** (never layers).
-For private registries, mount a Docker config into the pod and set
-`DOCKER_CONFIG`, or place credentials at `/home/nonroot/.docker/config.json`.
-Details: [configuration.md#private-registries](configuration.md#private-registries).
+Private registries (including private GHCR packages) need a Docker config
+Secret mounted into the pod - typically the same `kubernetes.io/dockerconfigjson`
+Secret Flux already uses for image pulls:
+
+```yaml
+registry:
+  existingDockerConfigSecret: ghcr-pull-secret
+```
+
+```bash
+helm upgrade --install github-deployment-bridge \
+  oci://ghcr.io/roberteggl/charts/github-deployment-bridge \
+  --namespace flux-system \
+  --set github.existingSecret=github-deployment-bridge \
+  --set config.clusterName=production-eu \
+  --set config.environment=production \
+  --set registry.existingDockerConfigSecret=ghcr-pull-secret
+```
+
+`imagePullSecrets` on this chart only pull the bridge image itself; they do not
+authenticate OCI label lookups. Details:
+[configuration.md#private-registries](configuration.md#private-registries).
 
 ## Uninstall
 
