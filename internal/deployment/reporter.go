@@ -261,7 +261,7 @@ func transitionSteps(from, to Phase) []Phase {
 	if from == to {
 		return nil
 	}
-	if !CanTransition(from, to) && !(from == "" && to != "") {
+	if !CanTransition(from, to) && (from != "" || to == "") {
 		// Allow multi-hop catch-up from empty or queued → terminal via intermediates.
 		if from != "" && from != PhaseQueued && from != PhaseInProgress {
 			return nil

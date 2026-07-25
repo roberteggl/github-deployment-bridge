@@ -7,9 +7,9 @@ BIN := bin/bridge
 IMG ?= ghcr.io/roberteggl/github-deployment-bridge
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 
-.PHONY: all build test lint tidy docker-build helm-lint fmt vet changelog
+.PHONY: all build test lint govulncheck tidy docker-build helm-lint fmt vet changelog
 
-all: tidy fmt vet test build
+all: tidy fmt vet lint govulncheck test build
 
 build:
 	mkdir -p bin
@@ -17,6 +17,12 @@ build:
 
 test:
 	go test ./...
+
+lint:
+	golangci-lint run ./...
+
+govulncheck:
+	go run golang.org/x/vuln/cmd/govulncheck ./...
 
 vet:
 	go vet ./...

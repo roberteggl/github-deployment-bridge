@@ -16,9 +16,14 @@ SPDX-License-Identifier: Apache-2.0
 
 ```bash
 make tidy
+make lint
+make govulncheck
 make test
 make build
 ```
+
+CI also runs `golangci-lint`, `govulncheck` (SARIF → code scanning), and Trivy
+image scans (`HIGH`/`CRITICAL`, ignore unfixed) on every PR.
 
 ## Documentation site
 

@@ -86,7 +86,7 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("open cache database: %w", err)
 	}
-	defer store.Close()
+	defer func() { _ = store.Close() }()
 
 	retryCfg := retry.Config{
 		MaxAttempts: cfg.RetryMaxAttempts,

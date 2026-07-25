@@ -27,14 +27,16 @@ make test
 make build
 ```
 
-Useful targets: `make vet`, `make helm-lint`, `make changelog`.
+Useful targets: `make lint`, `make govulncheck`, `make vet`, `make helm-lint`,
+`make changelog`.
 
 ## Pull requests
 
 1. Fork and create a topic branch from `main`.
 2. Keep changes focused; prefer small PRs.
 3. Add or update tests when changing behavior.
-4. Ensure CI is green (`test`, `helm`, `container`, `reuse`, `CodeQL` as applicable).
+4. Ensure CI is green (`test`, `lint`, `govulncheck`, `helm`, `container`/Trivy,
+   `reuse`, `CodeQL` as applicable).
 5. Fill in the PR description (what/why, test plan).
 
 ### Commit messages
