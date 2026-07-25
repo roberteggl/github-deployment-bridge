@@ -14,10 +14,6 @@ export default defineConfig({
   description:
     "Lightweight Kubernetes controller that bridges FluxCD reconciliations to the GitHub Deployments API.",
   icon: "/favicon.svg",
-  logo: {
-    light: "/logo.svg",
-    dark: "/logo.svg",
-  },
   logoText: "github-deployment-bridge",
   // Project Pages live at https://<user>.github.io/<repo>/
   base: isGitHubActions ? "/github-deployment-bridge/" : "/",
