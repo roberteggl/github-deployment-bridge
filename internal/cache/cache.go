@@ -118,7 +118,7 @@ func (s *SQLiteStore) ensureDeploymentNameColumn() error {
 	if err != nil {
 		return fmt.Errorf("pragma table_info: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	hasDeploymentName := false
 	for rows.Next() {
@@ -218,7 +218,7 @@ ORDER BY reported_at ASC
 	if err != nil {
 		return nil, fmt.Errorf("cache list by identity: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []Entry
 	for rows.Next() {

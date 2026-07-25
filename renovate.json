@@ -99,6 +99,22 @@
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"]
     },
     {
+      "description": "golangci-lint binary pin in workflows",
+      "matchManagers": ["custom.regex"],
+      "matchDepNames": ["golangci-lint"],
+      "groupName": "golangci-lint",
+      "automerge": true,
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"]
+    },
+    {
+      "description": "Trivy binary pin in workflows",
+      "matchManagers": ["custom.regex"],
+      "matchDepNames": ["trivy"],
+      "groupName": "trivy",
+      "automerge": true,
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"]
+    },
+    {
       "description": "Chart ships its own image via appVersion; do not pin digests",
       "matchManagers": ["helmv3", "helm-values"],
       "matchPackageNames": ["ghcr.io/roberteggl/github-deployment-bridge"],
@@ -119,6 +135,34 @@
       "packageNameTemplate": "helm/helm",
       "extractVersionTemplate": "^v(?<version>.*)$",
       "depNameTemplate": "helm"
+    },
+    {
+      "customType": "regex",
+      "description": "Bump golangci-lint version pins in GitHub Actions workflows",
+      "managerFilePatterns": [
+        "/(^|/)\\.github/workflows/[^/]+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "version:\\s*v?(?<currentValue>\\d+\\.\\d+\\.\\d+)\\s*#\\s*golangci-lint"
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "golangci/golangci-lint",
+      "extractVersionTemplate": "^v(?<version>.*)$",
+      "depNameTemplate": "golangci-lint"
+    },
+    {
+      "customType": "regex",
+      "description": "Bump Trivy version pins in GitHub Actions workflows",
+      "managerFilePatterns": [
+        "/(^|/)\\.github/workflows/[^/]+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "version:\\s*v?(?<currentValue>\\d+\\.\\d+\\.\\d+)\\s*#\\s*trivy"
+      ],
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "aquasecurity/trivy",
+      "extractVersionTemplate": "^v(?<version>.*)$",
+      "depNameTemplate": "trivy"
     }
   ]
 }

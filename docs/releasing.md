@@ -11,11 +11,12 @@ Releases are fully automated on `v*` tag push via
 
 ## Pipeline
 
-1. **Validate** - tidy, fmt, vet, race tests, build, Helm lint, chart/tag version match, REUSE
+1. **Validate** - tidy, fmt, vet, golangci-lint, govulncheck, race tests, build, Helm lint, chart/tag version match, REUSE
 2. **Changelog** - [git-cliff](https://git-cliff.org/) from Conventional Commits (`cliff.toml`)
 3. **Image** - native multi-arch build (no QEMU):
    - `linux/amd64` on `ubuntu-24.04`
    - `linux/arm64` on `ubuntu-24.04-arm`
+   - Trivy scan of each digest (`HIGH`/`CRITICAL`, ignore unfixed) before merge
    - push-by-digest → merge manifest list on GHCR
    - BuildKit SBOM + provenance
    - Sigstore keyless Cosign signature

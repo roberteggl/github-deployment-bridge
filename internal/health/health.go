@@ -6,11 +6,9 @@
 package health
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"sync/atomic"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -59,24 +57,4 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	_ = json.NewEncoder(w).Encode(v)
-}
-
-// Server is a small HTTP server for probes.
-type Server struct {
-	server *http.Server
-}
-
-// ListenAndServe starts the probe server and blocks until it exits.
-func (c *Checker) ListenAndServe(addr string) error {
-	s := &http.Server{
-		Addr:              addr,
-		Handler:           c.Handler(),
-		ReadHeaderTimeout: 5 * time.Second,
-	}
-	return s.ListenAndServe()
-}
-
-// Shutdown gracefully stops a server created outside this package.
-func Shutdown(ctx context.Context, s *http.Server) error {
-	return s.Shutdown(ctx)
 }
