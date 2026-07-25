@@ -186,14 +186,21 @@ func (r *Reporter) reportImage(ctx context.Context, in ReportInput, img Workload
 	// Catch-up: empty cache + terminal desired → emit only the terminal status.
 	steps := transitionSteps(current, desired)
 	if len(steps) == 0 {
-		r.log.Warn("illegal deployment state transition; skipping",
+		attrs := []any{
 			"previous_state", string(current),
 			"new_state", string(desired),
 			"repository", resolved.Repo.String(),
 			"commit", resolved.Commit,
 			"environment", resolved.Environment,
 			"deployment_name", resolved.DeploymentName,
-		)
+		}
+		// Flux often re-reconciles after success and briefly looks in_progress;
+		// skipping that is expected. Unexpected jumps stay at Warn.
+		if benignSkippedTransition(current, desired) {
+			r.log.Debug("skipping deployment state transition", attrs...)
+		} else {
+			r.log.Warn("illegal deployment state transition; skipping", attrs...)
+		}
 		if r.metrics != nil {
 			r.metrics.DeploymentDuplicatesSkippedTotal.Inc()
 		}

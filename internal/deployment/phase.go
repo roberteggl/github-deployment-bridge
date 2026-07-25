@@ -64,3 +64,9 @@ func CanTransition(from, to Phase) bool {
 func IsTerminal(p Phase) bool {
 	return p == PhaseSuccess || p == PhaseFailure || p == PhaseError || p == PhaseInactive
 }
+
+// benignSkippedTransition reports whether refusing from → to is expected
+// (e.g. Flux re-reconcile after success briefly looking in_progress).
+func benignSkippedTransition(from, to Phase) bool {
+	return IsTerminal(from) && (to == PhaseQueued || to == PhaseInProgress)
+}
