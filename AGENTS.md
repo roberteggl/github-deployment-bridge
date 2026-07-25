@@ -32,6 +32,7 @@ Read these before making non-trivial changes:
 | Doc | Contents |
 |---|---|
 | [README.md](README.md) | Overview, install, GitHub App setup |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | DCO, Conventional Commits, PR process |
 | [docs/architecture.md](docs/architecture.md) | Event flow, workload discovery, OCI labels |
 | [docs/configuration.md](docs/configuration.md) | Env vars, permissions, private registries |
 | [docs/development.md](docs/development.md) | Build, test, local run, integration tests |
@@ -57,6 +58,13 @@ Do not commit unless the user asks. Push only when requested.
 Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`,
 `fix:`, `docs:`, `ci:`, …) so [git-cliff](https://git-cliff.org/) can generate
 release notes.
+
+## OpenSSF Scorecard
+
+Weekly + `main` push analysis via [`.github/workflows/scorecard.yml`](.github/workflows/scorecard.yml).
+Results publish to the Scorecard API (README badge) and GitHub code scanning
+(`category: scorecard`). Keep that workflow free of top-level `env`/`defaults`
+and workflow-level write permissions so `publish_results: true` stays valid.
 
 ## Dependency updates (Renovate)
 

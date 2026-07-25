@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 # github-deployment-bridge
 
 [![REUSE status](https://api.reuse.software/badge/github.com/roberteggl/github-deployment-bridge)](https://api.reuse.software/info/github.com/roberteggl/github-deployment-bridge)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/roberteggl/github-deployment-bridge/badge)](https://scorecard.dev/viewer/?uri=github.com/roberteggl/github-deployment-bridge)
 [![Artifact Attestations](https://img.shields.io/badge/attestations-SLSA_provenance-2ea44f)](https://github.com/roberteggl/github-deployment-bridge/attestations)
 [![Cosign](https://img.shields.io/badge/cosign-keyless_signed-2ea44f)](docs/releasing.md#verify-signatures-and-attestations)
 
@@ -131,8 +132,8 @@ Verify: [docs/releasing.md](docs/releasing.md#verify-signatures-and-attestations
 make tidy test build
 ```
 
-See [docs/development.md](docs/development.md), [docs/architecture.md](docs/architecture.md),
-and [docs/releasing.md](docs/releasing.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md), [docs/development.md](docs/development.md),
+[docs/architecture.md](docs/architecture.md), and [docs/releasing.md](docs/releasing.md).
 
 ## Non-goals
 
