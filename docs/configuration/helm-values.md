@@ -31,6 +31,11 @@ SPDX-License-Identifier: Apache-2.0
 | `prometheusRule.enabled` | _(chart only)_ — emit PrometheusRule alerts |
 | `prometheusRule.labels` / thresholds / `runbookURL` | _(chart only)_ — alert tuning |
 
+`values.schema.json` validates types and enums (e.g. `config.logLevel`) on
+`helm install` / `upgrade` / `lint` / `template`. Config and chart-managed
+Secret changes roll the Deployment via `checksum/config` and `checksum/secret`
+pod annotations.
+
 Example `values.yaml` snippet:
 
 ```yaml

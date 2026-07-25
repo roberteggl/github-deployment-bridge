@@ -58,5 +58,18 @@ Private registries (e.g. GHCR): set registry.existingDockerConfigSecret
   to your existing dockerconfigjson Secret (often the same one Flux uses).
 {{- end }}
 
+{{- if .Values.github.existingSecret }}
+
+GitHub credentials: existing Secret {{ .Values.github.existingSecret | quote }}.
+  Rotating that Secret does not restart pods — run
+  kubectl -n {{ .Release.Namespace }} rollout restart deployment/{{ include "github-deployment-bridge.fullname" . }}
+  (or use Reloader / a similar controller).
+{{- else }}
+
+GitHub credentials: chart-managed Secret (checksum/secret rolls pods on change).
+  Prefer github.existingSecret in production so the PEM is not stored in the
+  Helm release Secret.
+{{- end }}
+
 Metrics: http://{{ include "github-deployment-bridge.fullname" . }}:{{ .Values.service.metricsPort }}/metrics
 Health:  http://{{ include "github-deployment-bridge.fullname" . }}:{{ .Values.service.metricsPort }}/healthz

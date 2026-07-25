@@ -51,3 +51,17 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- include "github-deployment-bridge.fullname" . }}-github
 {{- end }}
 {{- end }}
+
+{{/*
+Payload hashed into checksum/config so env / listen-port / registry changes
+roll the Deployment. Keep selectorLabels out of this — they must stay stable.
+*/}}
+{{- define "github-deployment-bridge.configChecksum" -}}
+{{- toYaml (dict
+  "config" .Values.config
+  "containerPorts" .Values.containerPorts
+  "registry" .Values.registry
+  "probes" .Values.probes
+  "existingSecret" .Values.github.existingSecret
+) -}}
+{{- end }}

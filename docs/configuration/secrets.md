@@ -18,6 +18,11 @@ Create it yourself and set `github.existingSecret`, or pass `github.appId`,
 `github.installationId`, and `github.privateKey` so the chart creates the
 Secret. Prefer an externally managed Secret in production.
 
+Chart-managed Secrets trigger a Deployment rollout via a `checksum/secret`
+annotation. With `github.existingSecret`, restart the Deployment (or use
+Reloader) after rotating credentials — see
+[Install → Secrets](../install/secrets.md).
+
 ```bash
 kubectl -n flux-system create secret generic github-deployment-bridge \
   --from-literal=app-id=123456 \

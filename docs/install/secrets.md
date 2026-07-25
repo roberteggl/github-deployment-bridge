@@ -37,6 +37,16 @@ kubectl -n flux-system create secret generic github-deployment-bridge \
 
 Then install with `github.existingSecret=github-deployment-bridge`.
 
+Rotating an `existingSecret` does not restart pods by itself (the chart cannot
+checksum an external Secret). After updating keys:
+
+```bash
+kubectl -n flux-system rollout restart deployment/github-deployment-bridge
+```
+
+Or use [Reloader](https://github.com/stakater/Reloader) / a similar controller
+watching the Secret.
+
 ## Alternative: let Helm create the Secret
 
 Pass values at install time (fine for local/dev; prefer an external Secret

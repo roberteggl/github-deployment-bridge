@@ -239,6 +239,35 @@ jobs:
           fi
           echo "${default}" | grep -q 'name: RETRY_MAX_ATTEMPTS'
           echo "${default}" | grep -q 'value: "5"'
+          # H2: checksum annotations for rollout
+          echo "${default}" | grep -q 'checksum/config'
+          echo "${default}" | grep -q 'checksum/secret'
+          existing="$(helm template github-deployment-bridge charts/github-deployment-bridge \
+            --set github.existingSecret=github-deployment-bridge)"
+          echo "${existing}" | grep -q 'checksum/config'
+          if echo "${existing}" | grep -q 'checksum/secret'; then
+            echo "checksum/secret must be omitted when github.existingSecret is set"
+            exit 1
+          fi
+          # H3: values.schema.json rejects invalid enums / unknown keys
+          if helm template github-deployment-bridge charts/github-deployment-bridge \
+            --set github.appId=1 \
+            --set github.installationId=1 \
+            --set github.privateKey=ci-fake-key \
+            --set config.logLevel=verbose \
+            >/dev/null 2>&1; then
+            echo "expected helm template to fail for invalid config.logLevel"
+            exit 1
+          fi
+          if helm template github-deployment-bridge charts/github-deployment-bridge \
+            --set github.appId=1 \
+            --set github.installationId=1 \
+            --set github.privateKey=ci-fake-key \
+            --set notARealValue=true \
+            >/dev/null 2>&1; then
+            echo "expected helm template to fail for unknown top-level value"
+            exit 1
+          fi
 
   container:
     name: Container (${{ matrix.name }})
