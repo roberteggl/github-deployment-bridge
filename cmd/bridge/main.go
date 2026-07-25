@@ -70,7 +70,11 @@ func run() error {
 		return err
 	}
 
-	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	level, err := cfg.SlogLevel()
+	if err != nil {
+		return err
+	}
+	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
 	slog.SetDefault(log)
 	// controller-runtime requires an explicit logr logger; bridge our slog handler.
 	ctrl.SetLogger(logr.FromSlogHandler(log.Handler()))
@@ -183,7 +187,8 @@ func run() error {
 		"commit", commit,
 		"cluster", cfg.ClusterName,
 		"environment", cfg.Environment,
-		"watchNamespace", cfg.WatchNamespace,
+		"watch_namespace", cfg.WatchNamespace,
+		"log_level", cfg.LogLevel,
 	)
 
 	if err := mgr.Start(ctx); err != nil {

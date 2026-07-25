@@ -43,6 +43,7 @@ config:
   watchNamespace: ""          # empty = all namespaces
   environmentURL: https://app.example.com
   logURLTemplate: https://grafana.example.com/explore?commit={sha}
+  logLevel: info
 
 github:
   existingSecret: github-deployment-bridge
@@ -105,6 +106,7 @@ values map to those vars. Full reference: [Configuration](../configuration/).
 | `config.watchNamespace` | `WATCH_NAMESPACE` | Limit to one namespace; empty = cluster-wide |
 | `config.environmentURL` | `ENVIRONMENT_URL` | Optional URL on deployment statuses |
 | `config.logURLTemplate` | `LOG_URL_TEMPLATE` | Optional log link; `{sha}` → commit |
+| `config.logLevel` | `LOG_LEVEL` | slog level (`debug` / `info` / `warn` / `error`) |
 | `config.githubBaseURL` | `GITHUB_BASE_URL` | GitHub Enterprise base URL |
 
 Next: [Verify](./verify.md)

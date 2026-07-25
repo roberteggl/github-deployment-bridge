@@ -70,6 +70,8 @@ config:
   watchNamespace: ""
   environmentURL: ""
   logURLTemplate: ""
+  # slog level: debug | info | warn | error
+  logLevel: info
   leaderElection: true
   githubBaseURL: ""
 

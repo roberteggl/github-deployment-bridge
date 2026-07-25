@@ -23,9 +23,8 @@ flowchart LR
 - Helm 3
 - A GitHub App (see [GitHub App setup](./github-app.md)) installed on the
   repositories you deploy
-- Workload images that carry the required OCI labels, or equivalent
-  `github-deployment-bridge.io/*` annotations (see
-  [architecture](../architecture.md#metadata-resolution))
+- Workload images that carry the required OCI labels (below), or equivalent
+  `github-deployment-bridge.io/*` annotations
 
 The bridge is an observer only. It does not reconcile GitOps state or mutate
 workloads. Install it in a namespace that can watch Flux `Kustomization` and
@@ -33,6 +32,31 @@ workloads. Install it in a namespace that can watch Flux `Kustomization` and
 
 HelmRelease inventory (required for image discovery) needs Flux ≥ 2.8 /
 helm-controller ≥ 1.5; older clusters simply skip HelmReleases with empty inventory.
+
+## Required OCI labels
+
+Bake these into each workload image so the bridge can resolve the GitHub
+repository and commit. Only two labels are required:
+
+| Label | Required | Example |
+|---|---|---|
+| `org.opencontainers.image.source` | yes\* | `https://github.com/example/backend` |
+| `org.opencontainers.image.revision` | yes\* | `0123456789abcdef` |
+| `org.opencontainers.image.version` | no | `v1.8.4` |
+| `org.opencontainers.image.title` | no | `backend` |
+| `org.opencontainers.image.created` | no | `2026-07-25T12:00:00Z` |
+
+\*Required unless overridden by the matching Kubernetes annotation
+(`github-deployment-bridge.io/repository` / `commit`). Workloads that use
+annotations must also set `auto-report=true`.
+
+```dockerfile
+LABEL org.opencontainers.image.source="https://github.com/example/backend" \
+      org.opencontainers.image.revision="0123456789abcdef"
+```
+
+Full precedence and annotation list:
+[Metadata resolution](../architecture.md#metadata-resolution).
 
 ## Steps
 

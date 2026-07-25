@@ -7,6 +7,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -21,6 +22,7 @@ type Config struct {
 	DatabasePath         string        `envconfig:"DATABASE" default:"/data/cache.db"`
 	EnvironmentURL       string        `envconfig:"ENVIRONMENT_URL"`
 	LogURLTemplate       string        `envconfig:"LOG_URL_TEMPLATE"`
+	LogLevel             string        `envconfig:"LOG_LEVEL" default:"info"`
 	MetricsAddr          string        `envconfig:"METRICS_ADDR" default:":8080"`
 	ProbeAddr            string        `envconfig:"PROBE_ADDR" default:":8081"`
 	LeaderElection       bool          `envconfig:"LEADER_ELECTION" default:"true"`
@@ -42,11 +44,15 @@ func Load() (Config, error) {
 	}
 	cfg.Environment = strings.TrimSpace(cfg.Environment)
 	cfg.ClusterName = strings.TrimSpace(cfg.ClusterName)
+	cfg.LogLevel = strings.TrimSpace(cfg.LogLevel)
 	if cfg.Environment == "" {
 		return Config{}, fmt.Errorf("ENVIRONMENT must not be empty")
 	}
 	if cfg.ClusterName == "" {
 		return Config{}, fmt.Errorf("CLUSTER_NAME must not be empty")
+	}
+	if _, err := cfg.SlogLevel(); err != nil {
+		return Config{}, err
 	}
 	if cfg.GitHubAppID <= 0 {
 		return Config{}, fmt.Errorf("GITHUB_APP_ID must be a positive integer")
@@ -58,6 +64,23 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("GITHUB_PRIVATE_KEY_PATH must not be empty")
 	}
 	return cfg, nil
+}
+
+// SlogLevel parses LOG_LEVEL into an slog level.
+// Accepted values: debug, info, warn (or warning), error (case-insensitive).
+func (c Config) SlogLevel() (slog.Level, error) {
+	switch strings.ToLower(c.LogLevel) {
+	case "debug":
+		return slog.LevelDebug, nil
+	case "info", "":
+		return slog.LevelInfo, nil
+	case "warn", "warning":
+		return slog.LevelWarn, nil
+	case "error":
+		return slog.LevelError, nil
+	default:
+		return 0, fmt.Errorf("LOG_LEVEL must be one of debug, info, warn, error")
+	}
 }
 
 // IsProduction reports whether the configured environment is production.

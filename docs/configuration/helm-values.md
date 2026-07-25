@@ -13,6 +13,7 @@ SPDX-License-Identifier: Apache-2.0
 | `config.watchNamespace` | `WATCH_NAMESPACE` |
 | `config.environmentURL` | `ENVIRONMENT_URL` |
 | `config.logURLTemplate` | `LOG_URL_TEMPLATE` |
+| `config.logLevel` | `LOG_LEVEL` |
 | `config.leaderElection` | `LEADER_ELECTION` |
 | `config.githubBaseURL` | `GITHUB_BASE_URL` |
 | _(fixed by chart)_ | `DATABASE=/data/cache.db` |
