@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# Must stay 1 when persistence uses ReadWriteOnce (default). The chart fails
+# helm template when replicaCount > 1 with an RWO PVC; see docs/install/persistence.md.
 replicaCount: 1
 
 image:
@@ -58,9 +60,12 @@ tolerations: []
 affinity: {}
 
 persistence:
+  # Keep enabled in production. When false, /data uses emptyDir and the SQLite
+  # cache is lost on reschedule (duplicate GitHub Deployments may be created).
   enabled: true
   size: 1Gi
   storageClass: ""
+  # ReadWriteOnce allows a single pod writer; replicaCount must be 1 (enforced).
   accessMode: ReadWriteOnce
 
 # Bridge configuration

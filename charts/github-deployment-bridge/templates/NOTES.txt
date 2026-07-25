@@ -2,6 +2,17 @@ GitHub Deployment Bridge has been installed.
 
 Cluster: {{ .Values.config.clusterName }}
 Environment: {{ .Values.config.environment }}
+{{- if not .Values.persistence.enabled }}
+
+WARNING: persistence.enabled is false — /data uses emptyDir.
+  The SQLite deduplication cache is lost on every pod reschedule; duplicate
+  GitHub Deployments may be created. Keep persistence.enabled=true in production.
+{{- else if and (gt (int .Values.replicaCount) 1) (eq (.Values.persistence.accessMode | default "ReadWriteOnce") "ReadWriteMany") }}
+
+WARNING: replicaCount={{ .Values.replicaCount }} with a shared PVC.
+  SQLite does not support safe multi-writer semantics — use replicaCount: 1
+  even with ReadWriteMany storage, or duplicate GitHub Deployments may occur.
+{{- end }}
 
 Ensure your container images include OCI labels:
   org.opencontainers.image.source
