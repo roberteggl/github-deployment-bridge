@@ -26,10 +26,13 @@ flowchart LR
 | `persistence.enabled` | `true` | Use a PVC for `/data` |
 | `persistence.size` | `1Gi` | Claim size |
 | `persistence.storageClass` | `""` | Empty = cluster default |
-| `persistence.accessMode` | `ReadWriteOnce` | Single writer |
+| `persistence.accessMode` | `ReadWriteOnce` | Single writer; chart rejects `replicaCount > 1` |
+| `replicaCount` | `1` | Must stay `1` with RWO PVC or SQLite-backed cache |
 
-Disable only for ephemeral/dev clusters. Without a PVC, an `emptyDir` is used
-and the cache is wiped on every pod reschedule (duplicate Deployments may
-appear in GitHub).
+Disable persistence only for ephemeral/dev clusters. Without a PVC, an
+`emptyDir` is used and the cache is wiped on every pod reschedule (duplicate
+Deployments may appear in GitHub). Multi-replica with `ReadWriteMany` is not
+supported either — SQLite does not provide safe multi-writer semantics. See
+[Install → Single replica](../install/persistence.md#single-replica-production-default).
 
 Why this matters: [Install → Why a PVC?](../install/persistence.md)

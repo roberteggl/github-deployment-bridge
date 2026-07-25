@@ -10,6 +10,10 @@ metadata:
     {{- include "github-deployment-bridge.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  {{- if .Values.persistence.enabled }}
+  strategy:
+    type: Recreate
+  {{- end }}
   selector:
     matchLabels:
       {{- include "github-deployment-bridge.selectorLabels" . | nindent 6 }}
