@@ -123,8 +123,14 @@ Prefix: `github-deployment-bridge.io/`
 | `production` | derived from env name | `production_environment` (`true`/`false`) |
 | `auto-report` | _(none)_ | **Opt-in.** Must be `true` to report; absent/`false` ignores the workload (no OCI fetch, no warning spam) |
 | `deployment-name` | repository name | Independent reports for monorepo workloads (also GitHub `task`) |
-
-Reserved for future use (recognized, ignored in v1): `team`, `service`, `component`, `slack-channel`, `owner`, `release`, `tag`, `cluster`.
+| `cluster` | `CLUSTER_NAME` | Deployment payload `cluster` |
+| `team` | _(none)_ | Deployment payload `team` |
+| `service` | _(none)_ | Deployment payload `service` |
+| `component` | _(none)_ | Deployment payload `component` |
+| `slack-channel` | _(none)_ | Deployment payload `slackChannel` |
+| `owner` | _(none)_ | Deployment payload `owner` (service owner, not GitHub repo owner) |
+| `release` | _(none)_ | Deployment payload `release` |
+| `tag` | _(none)_ | Deployment payload `tag` |
 
 ### Validation
 
@@ -152,7 +158,9 @@ Missing or invalid required metadata → skip reporting and emit a warning. Neve
 
 Deployment `payload` includes `cluster`, `namespace` (workload), `sourceNamespace` (Flux
 Kustomization / HelmRelease namespace), source name (`kustomization` / `helmRelease`),
-`deploymentName`, `image`, optional `digest` / `version`, and `controllerVersion`.
+`deploymentName`, `image`, optional `digest` / `version`, `controllerVersion`, and any
+optional annotation fields (`team`, `service`, `component`, `slackChannel`, `owner`,
+`release`, `tag`). The `cluster` annotation overrides the controller `CLUSTER_NAME` env.
 Crash recovery also matches older payloads that used the Flux source namespace as
 `namespace` and omitted `sourceNamespace`.
 

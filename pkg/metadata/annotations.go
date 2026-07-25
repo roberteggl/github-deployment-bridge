@@ -20,7 +20,7 @@ const (
 	AnnotationDeploymentName = AnnotationPrefix + "deployment-name"
 )
 
-// Future-reserved annotations. Recognized but ignored in v1.
+// Optional payload annotations copied into the GitHub Deployment payload when set.
 const (
 	AnnotationTeam         = AnnotationPrefix + "team"
 	AnnotationService      = AnnotationPrefix + "service"
@@ -32,8 +32,8 @@ const (
 	AnnotationCluster      = AnnotationPrefix + "cluster"
 )
 
-// ReservedAnnotations lists annotation keys that are recognized but unused in v1.
-var ReservedAnnotations = []string{
+// OptionalPayloadAnnotations lists optional annotation keys merged into payload.
+var OptionalPayloadAnnotations = []string{
 	AnnotationTeam,
 	AnnotationService,
 	AnnotationComponent,
@@ -44,9 +44,9 @@ var ReservedAnnotations = []string{
 	AnnotationCluster,
 }
 
-// IsReserved reports whether key is a future-reserved annotation.
-func IsReserved(key string) bool {
-	for _, k := range ReservedAnnotations {
+// IsOptionalPayloadAnnotation reports whether key is an optional payload annotation.
+func IsOptionalPayloadAnnotation(key string) bool {
+	for _, k := range OptionalPayloadAnnotations {
 		if k == key {
 			return true
 		}
