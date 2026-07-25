@@ -5,59 +5,41 @@
 // Package ocilabels extracts deployment metadata from OCI image config labels.
 package ocilabels
 
-import (
-	"fmt"
-
-	"github.com/roberteggl/github-deployment-bridge/pkg/giturl"
-)
-
 const (
 	LabelSource   = "org.opencontainers.image.source"
 	LabelRevision = "org.opencontainers.image.revision"
 	LabelVersion  = "org.opencontainers.image.version"
+	LabelTitle    = "org.opencontainers.image.title"
+	LabelCreated  = "org.opencontainers.image.created"
 )
 
-// Metadata holds the OCI labels required to report a GitHub Deployment.
+// Metadata holds OCI image labels used for GitHub Deployment reporting.
+//
+// Required for reporting (unless overridden by Kubernetes annotations):
+//   - Source (org.opencontainers.image.source)
+//   - Revision (org.opencontainers.image.revision)
+//
+// Optional:
+//   - Version, Title, Created — used for logging and diagnostics.
 type Metadata struct {
 	Source   string
 	Revision string
 	Version  string
-	Repo     giturl.Repository
+	Title    string
+	Created  string
 }
 
-// Extract reads required OCI labels and parses the GitHub repository from source.
-func Extract(labels map[string]string) (Metadata, error) {
+// Extract reads known OCI labels from an image config label map.
+// Missing labels are left empty; callers merge with annotations and validate.
+func Extract(labels map[string]string) Metadata {
 	if labels == nil {
-		return Metadata{}, fmt.Errorf("image has no labels")
+		return Metadata{}
 	}
-
-	source := labels[LabelSource]
-	revision := labels[LabelRevision]
-	version := labels[LabelVersion]
-
-	var missing []string
-	if source == "" {
-		missing = append(missing, LabelSource)
-	}
-	if revision == "" {
-		missing = append(missing, LabelRevision)
-	}
-	if version == "" {
-		missing = append(missing, LabelVersion)
-	}
-	if len(missing) > 0 {
-		return Metadata{}, fmt.Errorf("missing required OCI labels: %v", missing)
-	}
-
-	repo, err := giturl.Parse(source)
-	if err != nil {
-		return Metadata{}, fmt.Errorf("parse %s: %w", LabelSource, err)
-	}
-
 	return Metadata{
-		Source:   source,
-		Revision: revision,
-		Version:  version,
-		Repo:     repo,
-	}, nil
+		Source:   labels[LabelSource],
+		Revision: labels[LabelRevision],
+		Version:  labels[LabelVersion],
+		Title:    labels[LabelTitle],
+		Created:  labels[LabelCreated],
+	}
 }

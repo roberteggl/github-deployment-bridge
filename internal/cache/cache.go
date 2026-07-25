@@ -22,10 +22,11 @@ const (
 
 // Key uniquely identifies a reported deployment.
 type Key struct {
-	Owner       string
-	Repo        string
-	Environment string
-	CommitSHA   string
+	Owner          string
+	Repo           string
+	Environment    string
+	CommitSHA      string
+	DeploymentName string
 }
 
 // Entry is a cached deployment report.
@@ -72,15 +73,22 @@ CREATE TABLE IF NOT EXISTS deployments (
 	repo TEXT NOT NULL,
 	environment TEXT NOT NULL,
 	commit_sha TEXT NOT NULL,
+	deployment_name TEXT NOT NULL DEFAULT '',
 	deployment_id INTEGER NOT NULL,
 	status TEXT NOT NULL,
 	reported_at TEXT NOT NULL,
-	PRIMARY KEY (owner, repo, environment, commit_sha)
+	PRIMARY KEY (owner, repo, environment, commit_sha, deployment_name)
 );
 `
 	if _, err := s.db.Exec(schema); err != nil {
 		return fmt.Errorf("migrate sqlite: %w", err)
 	}
+
+	// Upgrade legacy schemas that lack deployment_name in the primary key.
+	if err := s.ensureDeploymentNameColumn(); err != nil {
+		return err
+	}
+
 	// Improve concurrent safety for a single-writer controller.
 	if _, err := s.db.Exec(`PRAGMA journal_mode=WAL;`); err != nil {
 		return fmt.Errorf("enable wal: %w", err)
@@ -91,18 +99,70 @@ CREATE TABLE IF NOT EXISTS deployments (
 	return nil
 }
 
+func (s *SQLiteStore) ensureDeploymentNameColumn() error {
+	rows, err := s.db.Query(`PRAGMA table_info(deployments)`)
+	if err != nil {
+		return fmt.Errorf("pragma table_info: %w", err)
+	}
+	defer rows.Close()
+
+	hasDeploymentName := false
+	for rows.Next() {
+		var cid int
+		var name, ctype string
+		var notnull, pk int
+		var dflt sql.NullString
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			return fmt.Errorf("scan table_info: %w", err)
+		}
+		if name == "deployment_name" {
+			hasDeploymentName = true
+			break
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("table_info rows: %w", err)
+	}
+	if hasDeploymentName {
+		return nil
+	}
+
+	// Rebuild table so deployment_name is part of the primary key.
+	const rebuild = `
+CREATE TABLE deployments_new (
+	owner TEXT NOT NULL,
+	repo TEXT NOT NULL,
+	environment TEXT NOT NULL,
+	commit_sha TEXT NOT NULL,
+	deployment_name TEXT NOT NULL DEFAULT '',
+	deployment_id INTEGER NOT NULL,
+	status TEXT NOT NULL,
+	reported_at TEXT NOT NULL,
+	PRIMARY KEY (owner, repo, environment, commit_sha, deployment_name)
+);
+INSERT INTO deployments_new (owner, repo, environment, commit_sha, deployment_name, deployment_id, status, reported_at)
+SELECT owner, repo, environment, commit_sha, '', deployment_id, status, reported_at FROM deployments;
+DROP TABLE deployments;
+ALTER TABLE deployments_new RENAME TO deployments;
+`
+	if _, err := s.db.Exec(rebuild); err != nil {
+		return fmt.Errorf("migrate deployment_name: %w", err)
+	}
+	return nil
+}
+
 // Get returns a cached entry, or nil if none exists.
 func (s *SQLiteStore) Get(ctx context.Context, key Key) (*Entry, error) {
 	const q = `
-SELECT owner, repo, environment, commit_sha, deployment_id, status, reported_at
+SELECT owner, repo, environment, commit_sha, deployment_name, deployment_id, status, reported_at
 FROM deployments
-WHERE owner = ? AND repo = ? AND environment = ? AND commit_sha = ?
+WHERE owner = ? AND repo = ? AND environment = ? AND commit_sha = ? AND deployment_name = ?
 `
-	row := s.db.QueryRowContext(ctx, q, key.Owner, key.Repo, key.Environment, key.CommitSHA)
+	row := s.db.QueryRowContext(ctx, q, key.Owner, key.Repo, key.Environment, key.CommitSHA, key.DeploymentName)
 	var e Entry
 	var reportedAt string
 	err := row.Scan(
-		&e.Key.Owner, &e.Key.Repo, &e.Key.Environment, &e.Key.CommitSHA,
+		&e.Key.Owner, &e.Key.Repo, &e.Key.Environment, &e.Key.CommitSHA, &e.Key.DeploymentName,
 		&e.DeploymentID, &e.Status, &reportedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -128,15 +188,15 @@ func (s *SQLiteStore) Put(ctx context.Context, entry Entry) error {
 		entry.ReportedAt = time.Now().UTC()
 	}
 	const q = `
-INSERT INTO deployments (owner, repo, environment, commit_sha, deployment_id, status, reported_at)
-VALUES (?, ?, ?, ?, ?, ?, ?)
-ON CONFLICT(owner, repo, environment, commit_sha) DO UPDATE SET
+INSERT INTO deployments (owner, repo, environment, commit_sha, deployment_name, deployment_id, status, reported_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(owner, repo, environment, commit_sha, deployment_name) DO UPDATE SET
 	deployment_id = excluded.deployment_id,
 	status = excluded.status,
 	reported_at = excluded.reported_at
 `
 	_, err := s.db.ExecContext(ctx, q,
-		entry.Key.Owner, entry.Key.Repo, entry.Key.Environment, entry.Key.CommitSHA,
+		entry.Key.Owner, entry.Key.Repo, entry.Key.Environment, entry.Key.CommitSHA, entry.Key.DeploymentName,
 		entry.DeploymentID, entry.Status, entry.ReportedAt.UTC().Format(time.RFC3339Nano),
 	)
 	if err != nil {

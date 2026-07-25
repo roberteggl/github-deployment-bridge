@@ -7,6 +7,7 @@ package deployment
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -17,15 +18,18 @@ import (
 	gh "github.com/roberteggl/github-deployment-bridge/internal/github"
 	"github.com/roberteggl/github-deployment-bridge/internal/metrics"
 	"github.com/roberteggl/github-deployment-bridge/internal/registry"
+	"github.com/roberteggl/github-deployment-bridge/pkg/metadata"
+	"github.com/roberteggl/github-deployment-bridge/pkg/ocilabels"
 	"github.com/roberteggl/github-deployment-bridge/pkg/retry"
 )
 
 // WorkloadImage is a container image discovered from a reconciled workload.
 type WorkloadImage struct {
-	Namespace string
-	Kind      string
-	Name      string
-	Image     string
+	Namespace   string
+	Kind        string
+	Name        string
+	Image       string
+	Annotations map[string]string
 }
 
 // ReportInput is one Flux Kustomization reconciliation to report.
@@ -68,7 +72,7 @@ func NewReporter(
 }
 
 // Report processes images from a ready Kustomization.
-// Permanent errors (e.g. malformed OCI labels) are logged and skipped.
+// Permanent errors (e.g. missing metadata) are logged and skipped.
 // Transient errors are returned so controller-runtime can retry.
 func (r *Reporter) Report(ctx context.Context, in ReportInput) error {
 	seen := make(map[string]struct{})
@@ -78,12 +82,27 @@ func (r *Reporter) Report(ctx context.Context, in ReportInput) error {
 		if image == "" {
 			continue
 		}
-		if _, ok := seen[image]; ok {
+		// Deduplicate per workload+image so distinct deployment-name annotations are preserved.
+		dedupeKey := img.Kind + "/" + img.Namespace + "/" + img.Name + "/" + image
+		if _, ok := seen[dedupeKey]; ok {
 			continue
 		}
-		seen[image] = struct{}{}
+		seen[dedupeKey] = struct{}{}
 
 		if err := r.reportImage(ctx, in, img); err != nil {
+			var skip *metadata.SkipError
+			if errors.As(err, &skip) {
+				r.log.Info("skipping workload",
+					"reason", skip.Reason,
+					"cluster", r.cfg.ClusterName,
+					"namespace", in.Namespace,
+					"kustomization", in.Kustomization,
+					"workload_kind", img.Kind,
+					"workload_name", img.Name,
+					"image", image,
+				)
+				continue
+			}
 			r.log.Warn("failed to report deployment for image",
 				"error", err,
 				"cluster", r.cfg.ClusterName,
@@ -110,16 +129,62 @@ func (r *Reporter) Report(ctx context.Context, in ReportInput) error {
 func (r *Reporter) reportImage(ctx context.Context, in ReportInput, img WorkloadImage) error {
 	start := time.Now()
 
-	meta, err := r.registry.Inspect(ctx, img.Image)
+	// Opt-out before touching the registry.
+	if raw, ok := img.Annotations[metadata.AnnotationAutoReport]; ok {
+		v, parsed, err := metadata.ParseBoolAnnotation(raw)
+		if err != nil {
+			return retry.Permanent(fmt.Errorf("%s: %w", metadata.AnnotationAutoReport, err))
+		}
+		if parsed && !v {
+			return &metadata.SkipError{Reason: "auto-report=false"}
+		}
+	}
+
+	ociMeta, err := r.registry.Inspect(ctx, img.Image)
 	if err != nil {
-		return fmt.Errorf("inspect image: %w", err)
+		// When annotations supply repository+commit, OCI inspection is optional.
+		if hasAnnotationOverrides(img.Annotations) && retry.IsPermanent(err) {
+			r.log.Warn("OCI inspect failed; using annotation overrides",
+				"error", err,
+				"image", img.Image,
+				"workload_kind", img.Kind,
+				"workload_name", img.Name,
+			)
+			ociMeta = ocilabels.Metadata{}
+		} else {
+			return fmt.Errorf("inspect image: %w", err)
+		}
+	}
+
+	resolved, err := metadata.Resolve(img.Annotations, ociMeta, metadata.Defaults{
+		Environment:    r.cfg.Environment,
+		EnvironmentURL: r.cfg.EnvironmentURL,
+		Description:    "Deployed by FluxCD",
+	})
+	if err != nil {
+		var skip *metadata.SkipError
+		if errors.As(err, &skip) {
+			return skip
+		}
+		return retry.Permanent(err)
+	}
+
+	// Apply controller log URL template when the annotation is absent.
+	if strings.TrimSpace(img.Annotations[metadata.AnnotationLogURL]) == "" {
+		if logURL := r.cfg.ExpandLogURL(resolved.Commit); logURL != "" {
+			if !metadata.ValidHTTPSURL(logURL) {
+				return retry.Permanent(fmt.Errorf("LOG_URL_TEMPLATE expanded to invalid HTTPS URL %q", logURL))
+			}
+			resolved.LogURL = logURL
+		}
 	}
 
 	key := cache.Key{
-		Owner:       meta.Repo.Owner,
-		Repo:        meta.Repo.Name,
-		Environment: r.cfg.Environment,
-		CommitSHA:   meta.Revision,
+		Owner:          resolved.Repo.Owner,
+		Repo:           resolved.Repo.Name,
+		Environment:    resolved.Environment,
+		CommitSHA:      resolved.Commit,
+		DeploymentName: resolved.DeploymentName,
 	}
 
 	existing, err := r.cache.Get(ctx, key)
@@ -134,9 +199,10 @@ func (r *Reporter) reportImage(ctx context.Context, in ReportInput, img Workload
 			"cluster", r.cfg.ClusterName,
 			"namespace", in.Namespace,
 			"kustomization", in.Kustomization,
-			"repository", meta.Repo.String(),
-			"commit", meta.Revision,
-			"environment", r.cfg.Environment,
+			"repository", resolved.Repo.String(),
+			"commit", resolved.Commit,
+			"environment", resolved.Environment,
+			"deployment_name", resolved.DeploymentName,
 			"deployment_id", existing.DeploymentID,
 		)
 		return nil
@@ -145,25 +211,31 @@ func (r *Reporter) reportImage(ctx context.Context, in ReportInput, img Workload
 		r.metrics.CacheMissesTotal.Inc()
 	}
 
+	task := ""
+	if _, set := img.Annotations[metadata.AnnotationDeploymentName]; set {
+		task = resolved.DeploymentName
+	}
+
 	dep, err := r.github.CreateDeployment(ctx, gh.DeploymentRequest{
-		Owner:                 meta.Repo.Owner,
-		Repo:                  meta.Repo.Name,
-		Ref:                   meta.Revision,
-		Environment:           r.cfg.Environment,
-		ProductionEnvironment: r.cfg.IsProduction(),
-		Description:           "Deployed by FluxCD",
+		Owner:                 resolved.Repo.Owner,
+		Repo:                  resolved.Repo.Name,
+		Ref:                   resolved.Commit,
+		Environment:           resolved.Environment,
+		ProductionEnvironment: resolved.Production,
+		Description:           resolved.Description,
+		Task:                  task,
 	})
 	if err != nil {
 		return fmt.Errorf("create github deployment: %w", err)
 	}
 
 	if err := r.github.CreateDeploymentStatus(ctx, gh.DeploymentStatusRequest{
-		Owner:          meta.Repo.Owner,
-		Repo:           meta.Repo.Name,
+		Owner:          resolved.Repo.Owner,
+		Repo:           resolved.Repo.Name,
 		DeploymentID:   dep.ID,
 		State:          "success",
-		EnvironmentURL: r.cfg.EnvironmentURL,
-		LogURL:         r.cfg.ExpandLogURL(meta.Revision),
+		EnvironmentURL: resolved.EnvironmentURL,
+		LogURL:         resolved.LogURL,
 		Description:    "Flux reconciliation succeeded",
 	}); err != nil {
 		return fmt.Errorf("create github deployment status: %w", err)
@@ -186,10 +258,13 @@ func (r *Reporter) reportImage(ctx context.Context, in ReportInput, img Workload
 		"cluster", r.cfg.ClusterName,
 		"namespace", in.Namespace,
 		"kustomization", in.Kustomization,
-		"repository", meta.Repo.String(),
-		"commit", meta.Revision,
-		"version", meta.Version,
-		"environment", r.cfg.Environment,
+		"repository", resolved.Repo.String(),
+		"commit", resolved.Commit,
+		"version", resolved.Version,
+		"title", resolved.Title,
+		"created", resolved.Created,
+		"environment", resolved.Environment,
+		"deployment_name", resolved.DeploymentName,
 		"deployment_id", dep.ID,
 		"image", img.Image,
 		"workload_kind", img.Kind,
@@ -197,4 +272,12 @@ func (r *Reporter) reportImage(ctx context.Context, in ReportInput, img Workload
 		"duration", time.Since(start).String(),
 	)
 	return nil
+}
+
+func hasAnnotationOverrides(ann map[string]string) bool {
+	if ann == nil {
+		return false
+	}
+	return strings.TrimSpace(ann[metadata.AnnotationRepository]) != "" &&
+		strings.TrimSpace(ann[metadata.AnnotationCommit]) != ""
 }

@@ -15,28 +15,27 @@ func FuzzExtract(f *testing.F) {
 		"https://github.com/example/backend",
 		"0123456789abcdef",
 		"v1.8.4",
+		"backend",
+		"2026-01-01T00:00:00Z",
 	)
-	f.Add("acme/widgets", "abc", "1.0.0")
-	f.Add("https://gitlab.com/example/backend", "abc", "v1")
-	f.Add("", "", "")
-	f.Add("git@github.com:org/repo.git", "deadbeef", "v0.1.0")
+	f.Add("acme/widgets", "abc", "1.0.0", "", "")
+	f.Add("", "", "", "", "")
 
-	f.Fuzz(func(t *testing.T, source, revision, version string) {
+	f.Fuzz(func(t *testing.T, source, revision, version, title, created string) {
 		labels := map[string]string{
 			ocilabels.LabelSource:   source,
 			ocilabels.LabelRevision: revision,
 			ocilabels.LabelVersion:  version,
+			ocilabels.LabelTitle:    title,
+			ocilabels.LabelCreated:  created,
 		}
 
-		meta, err := ocilabels.Extract(labels)
-		if err != nil {
-			return
-		}
+		meta := ocilabels.Extract(labels)
 		if meta.Source != source || meta.Revision != revision || meta.Version != version {
-			t.Fatalf("labels not preserved: got %#v", meta)
+			t.Fatalf("required fields not preserved: got %#v", meta)
 		}
-		if meta.Repo.Owner == "" || meta.Repo.Name == "" {
-			t.Fatalf("Extract succeeded with empty repo: %#v", meta)
+		if meta.Title != title || meta.Created != created {
+			t.Fatalf("optional fields not preserved: got %#v", meta)
 		}
 	})
 }

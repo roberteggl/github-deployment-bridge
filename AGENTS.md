@@ -14,10 +14,11 @@ bridges FluxCD reconciliations to the GitHub Deployments API.
 When a Flux `Kustomization` becomes Ready, the bridge:
 
 1. Discovers workload images (`Deployment`, `StatefulSet`, `DaemonSet`)
-2. Reads OCI labels (`source`, `revision`, `version`) - no layer pulls
-3. Authenticates as a GitHub App (never a PAT)
-4. Creates a GitHub Deployment + `success` status
-5. Deduplicates via SQLite on `(owner, repo, environment, commitSHA)`
+2. Reads OCI labels (`source`, `revision`, optional `version`/`title`/`created`) - no layer pulls
+3. Merges optional `github-deployment-bridge.io/*` annotations (annotation > OCI > default)
+4. Authenticates as a GitHub App (never a PAT)
+5. Creates a GitHub Deployment + `success` status
+6. Deduplicates via SQLite on `(owner, repo, environment, commitSHA, deploymentName)`
 
 Stack: Go 1.25+, chi, slog, controller-runtime, go-github, go-containerregistry,
 modernc SQLite, Prometheus, distroless image, Helm chart.
@@ -34,7 +35,7 @@ Read these before making non-trivial changes:
 | [README.md](README.md) | Overview, quick start |
 | [docs/install.md](docs/install.md) | Cluster install, GitHub App, secrets, PVC |
 | [docs/configuration.md](docs/configuration.md) | Env vars, Helm values, permissions, registries |
-| [docs/architecture.md](docs/architecture.md) | Event flow, workload discovery, OCI labels |
+| [docs/architecture.md](docs/architecture.md) | Event flow, workload discovery, metadata (OCI + annotations) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | DCO, Conventional Commits, PR process |
 | [docs/development.md](docs/development.md) | Build, test, local run, integration tests |
 | [docs/releasing.md](docs/releasing.md) | Tag-driven release pipeline (git-cliff, GHCR, Helm) |

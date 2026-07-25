@@ -87,11 +87,7 @@ func (c *Client) Inspect(ctx context.Context, image string) (ocilabels.Metadata,
 			return retry.Permanent(fmt.Errorf("image %q has empty config", image))
 		}
 
-		meta, err = ocilabels.Extract(cfg.Config.Labels)
-		if err != nil {
-			c.inc("error")
-			return retry.Permanent(err)
-		}
+		meta = ocilabels.Extract(cfg.Config.Labels)
 		c.inc("success")
 		return nil
 	})

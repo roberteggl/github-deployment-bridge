@@ -15,11 +15,11 @@ instead (see [install.md](install.md)).
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `CLUSTER_NAME` | yes | | Logical cluster name used in logs |
-| `ENVIRONMENT` | yes | | GitHub deployment environment (e.g. `production`) |
+| `ENVIRONMENT` | yes | | Default GitHub deployment environment (overridable per workload) |
 | `WATCH_NAMESPACE` | no | _(all)_ | Limit Flux Kustomization watch to one namespace |
 | `DATABASE` | no | `/data/cache.db` | SQLite path for duplicate prevention |
-| `ENVIRONMENT_URL` | no | | Optional URL attached to deployment statuses |
-| `LOG_URL_TEMPLATE` | no | | Optional log URL; `{sha}` is replaced with the commit |
+| `ENVIRONMENT_URL` | no | | Default HTTPS URL on deployment statuses (overridable) |
+| `LOG_URL_TEMPLATE` | no | | Default log URL; `{sha}` is replaced with the commit (overridable) |
 | `METRICS_ADDR` | no | `:8080` | Prometheus metrics + convenience probes |
 | `PROBE_ADDR` | no | `:8081` | controller-runtime health probes |
 | `LEADER_ELECTION` | no | `true` | Enable leader election |
@@ -88,8 +88,9 @@ kubectl -n flux-system create secret generic github-deployment-bridge \
 ## Persistence (PVC)
 
 The SQLite cache at `DATABASE` (`/data/cache.db` in the chart) stores
-`(owner, repo, environment, commitSHA)` so the same commit is not reported
-twice when Flux re-reconciles.
+`(owner, repo, environment, commitSHA, deploymentName)` so the same commit is not
+reported twice when Flux re-reconciles (and so monorepo workloads with distinct
+`deployment-name` annotations stay independent).
 
 | Helm value | Default | Description |
 |---|---|---|

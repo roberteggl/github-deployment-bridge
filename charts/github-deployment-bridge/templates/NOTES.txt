@@ -6,7 +6,11 @@ Environment: {{ .Values.config.environment }}
 Ensure your container images include OCI labels:
   org.opencontainers.image.source
   org.opencontainers.image.revision
-  org.opencontainers.image.version
+  org.opencontainers.image.version   (optional)
+
+Optional workload annotations use prefix:
+  github-deployment-bridge.io/
+See docs/architecture.md for the full metadata specification.
 {{- if .Values.registry.existingDockerConfigSecret }}
 
 Private registry auth: Secret {{ .Values.registry.existingDockerConfigSecret | quote }}

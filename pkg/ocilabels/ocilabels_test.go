@@ -14,68 +14,56 @@ func TestExtract(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		labels  map[string]string
-		owner   string
-		repo    string
-		rev     string
-		version string
-		wantErr bool
+		name   string
+		labels map[string]string
+		want   ocilabels.Metadata
 	}{
 		{
-			name: "valid labels",
+			name: "all labels",
 			labels: map[string]string{
 				ocilabels.LabelSource:   "https://github.com/example/backend",
 				ocilabels.LabelRevision: "0123456789abcdef",
 				ocilabels.LabelVersion:  "v1.8.4",
+				ocilabels.LabelTitle:    "backend",
+				ocilabels.LabelCreated:  "2026-07-25T12:00:00Z",
 			},
-			owner:   "example",
-			repo:    "backend",
-			rev:     "0123456789abcdef",
-			version: "v1.8.4",
+			want: ocilabels.Metadata{
+				Source:   "https://github.com/example/backend",
+				Revision: "0123456789abcdef",
+				Version:  "v1.8.4",
+				Title:    "backend",
+				Created:  "2026-07-25T12:00:00Z",
+			},
 		},
 		{
-			name: "missing revision",
+			name: "optional fields omitted",
 			labels: map[string]string{
-				ocilabels.LabelSource:  "https://github.com/example/backend",
-				ocilabels.LabelVersion: "v1.8.4",
+				ocilabels.LabelSource:   "https://github.com/example/backend",
+				ocilabels.LabelRevision: "0123456789abcdef",
 			},
-			wantErr: true,
+			want: ocilabels.Metadata{
+				Source:   "https://github.com/example/backend",
+				Revision: "0123456789abcdef",
+			},
 		},
 		{
-			name:    "nil labels",
-			labels:  nil,
-			wantErr: true,
+			name:   "nil labels",
+			labels: nil,
+			want:   ocilabels.Metadata{},
 		},
 		{
-			name: "bad source url",
-			labels: map[string]string{
-				ocilabels.LabelSource:   "https://gitlab.com/example/backend",
-				ocilabels.LabelRevision: "abc",
-				ocilabels.LabelVersion:  "v1",
-			},
-			wantErr: true,
+			name:   "empty labels",
+			labels: map[string]string{},
+			want:   ocilabels.Metadata{},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, err := ocilabels.Extract(tt.labels)
-			if tt.wantErr {
-				if err == nil {
-					t.Fatalf("expected error, got %#v", got)
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if got.Repo.Owner != tt.owner || got.Repo.Name != tt.repo {
-				t.Fatalf("repo = %s, want %s/%s", got.Repo, tt.owner, tt.repo)
-			}
-			if got.Revision != tt.rev || got.Version != tt.version {
-				t.Fatalf("revision/version = %s/%s, want %s/%s", got.Revision, got.Version, tt.rev, tt.version)
+			got := ocilabels.Extract(tt.labels)
+			if got != tt.want {
+				t.Fatalf("Extract() = %#v, want %#v", got, tt.want)
 			}
 		})
 	}

@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/roberteggl/github-deployment-bridge/internal/deployment"
+	"github.com/roberteggl/github-deployment-bridge/pkg/metadata"
 )
 
 var workloadKinds = map[string]schema.GroupVersionKind{
@@ -105,6 +106,8 @@ func (f *WorkloadFinder) imagesFromWorkload(ctx context.Context, namespace, name
 		return nil, err
 	}
 
+	annotations := mergeWorkloadAnnotations(obj)
+
 	containers, found, err := unstructured.NestedSlice(obj.Object, "spec", "template", "spec", "containers")
 	if err != nil {
 		return nil, fmt.Errorf("read containers for %s/%s: %w", kind, name, err)
@@ -124,10 +127,11 @@ func (f *WorkloadFinder) imagesFromWorkload(ctx context.Context, namespace, name
 			continue
 		}
 		out = append(out, deployment.WorkloadImage{
-			Namespace: namespace,
-			Kind:      kind,
-			Name:      name,
-			Image:     image,
+			Namespace:   namespace,
+			Kind:        kind,
+			Name:        name,
+			Image:       image,
+			Annotations: annotations,
 		})
 	}
 
@@ -147,15 +151,37 @@ func (f *WorkloadFinder) imagesFromWorkload(ctx context.Context, namespace, name
 				continue
 			}
 			out = append(out, deployment.WorkloadImage{
-				Namespace: namespace,
-				Kind:      kind,
-				Name:      name,
-				Image:     image,
+				Namespace:   namespace,
+				Kind:        kind,
+				Name:        name,
+				Image:       image,
+				Annotations: annotations,
 			})
 		}
 	}
 
 	return out, nil
+}
+
+// mergeWorkloadAnnotations returns bridge annotations from the workload and its pod template.
+// Workload metadata.annotations take precedence over pod template annotations.
+func mergeWorkloadAnnotations(obj *unstructured.Unstructured) map[string]string {
+	out := map[string]string{}
+	podAnn, _, _ := unstructured.NestedStringMap(obj.Object, "spec", "template", "metadata", "annotations")
+	for k, v := range podAnn {
+		if strings.HasPrefix(k, metadata.AnnotationPrefix) {
+			out[k] = v
+		}
+	}
+	for k, v := range obj.GetAnnotations() {
+		if strings.HasPrefix(k, metadata.AnnotationPrefix) {
+			out[k] = v
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 func (f *WorkloadFinder) imagesFromReplicaSet(ctx context.Context, namespace, name string) ([]deployment.WorkloadImage, error) {

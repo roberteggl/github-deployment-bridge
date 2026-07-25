@@ -27,6 +27,9 @@ type DeploymentRequest struct {
 	Environment           string
 	ProductionEnvironment bool
 	Description           string
+	// Task is the GitHub Deployment task (defaults to "deploy" when empty).
+	// Used when github-deployment-bridge.io/deployment-name is set.
+	Task string
 }
 
 // DeploymentStatusRequest describes a deployment status to create.
@@ -126,6 +129,9 @@ func (c *AppClient) CreateDeployment(ctx context.Context, req DeploymentRequest)
 			RequiredContexts:      []string{},
 			ProductionEnvironment: github.Ptr(req.ProductionEnvironment),
 			Description:           github.Ptr(desc),
+		}
+		if req.Task != "" {
+			ghReq.Task = github.Ptr(req.Task)
 		}
 
 		dep, resp, err := c.client.Repositories.CreateDeployment(ctx, req.Owner, req.Repo, ghReq)

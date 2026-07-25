@@ -16,8 +16,9 @@ alongside FluxCD, including GitHub App setup, secrets, and persistence.
 - Helm 3
 - A GitHub App (see [GitHub App setup](#github-app-setup)) installed on the
   repositories you deploy
-- Workload images that carry the required OCI labels (see
-  [architecture](architecture.md#oci-labels))
+- Workload images that carry the required OCI labels, or equivalent
+  `github-deployment-bridge.io/*` annotations (see
+  [architecture](architecture.md#metadata-resolution))
 
 The bridge is an observer only. It does not reconcile GitOps state or mutate
 workloads. Install it in a namespace that can watch Flux `Kustomization`
@@ -117,7 +118,7 @@ helm upgrade --install github-deployment-bridge \
 ## Why a PVC?
 
 The bridge keeps a small SQLite database at `/data/cache.db` keyed by
-`(owner, repo, environment, commitSHA)`. That cache prevents duplicate GitHub
+`(owner, repo, environment, commitSHA, deploymentName)`. That cache prevents duplicate GitHub
 Deployments when Flux re-reconciles the same commit.
 
 With `persistence.enabled=true` (the chart default):
@@ -243,7 +244,8 @@ kubectl -n flux-system port-forward svc/github-deployment-bridge 8080:8080
 curl -s localhost:8080/metrics | grep deployment_reports
 ```
 
-After Flux reconciles a Ready `Kustomization` whose images have OCI labels, you
+After Flux reconciles a Ready `Kustomization` whose images have resolvable
+metadata (OCI labels and/or annotations), you
 should see a new GitHub Deployment (and `success` status) for that commit under
 **Environments** in the repository.
 

@@ -13,31 +13,41 @@ SPDX-License-Identifier: Apache-2.0
 
 A lightweight Kubernetes controller that bridges **FluxCD** reconciliations to the **GitHub Deployments API**.
 
-When a Flux `Kustomization` becomes Ready, the bridge inspects deployed container images, reads standard OCI labels, and reports a successful GitHub Deployment for the discovered repository and commit - with zero per-application mapping.
+When a Flux `Kustomization` becomes Ready, the bridge inspects deployed container images, reads standard OCI labels (with optional Kubernetes annotation overrides), and reports a successful GitHub Deployment for the discovered repository and commit - with zero per-application mapping database.
 
 ## How it works
 
 ```text
 Flux Kustomization Ready=True
         ↓
-Discover Deployment / StatefulSet / DaemonSet images
+Discover Deployment / StatefulSet / DaemonSet images + annotations
         ↓
 Fetch OCI manifest + config labels (no layer pull)
+        ↓
+Resolve metadata (annotation > OCI > default)
         ↓
 Authenticate as GitHub App
         ↓
 Create Deployment + Status(success)
         ↓
-Cache (owner, repo, environment, commit) to prevent duplicates
+Cache (owner, repo, environment, commit, deployment-name) to prevent duplicates
 ```
 
-Required image labels:
+### OCI labels
 
-| Label | Example |
-|---|---|
-| `org.opencontainers.image.source` | `https://github.com/example/backend` |
-| `org.opencontainers.image.revision` | `0123456789abcdef` |
-| `org.opencontainers.image.version` | `v1.8.4` |
+| Label | Required | Example |
+|---|---|---|
+| `org.opencontainers.image.source` | yes\* | `https://github.com/example/backend` |
+| `org.opencontainers.image.revision` | yes\* | `0123456789abcdef` |
+| `org.opencontainers.image.version` | no | `v1.8.4` |
+| `org.opencontainers.image.title` | no | `backend` |
+| `org.opencontainers.image.created` | no | `2026-07-25T12:00:00Z` |
+
+\*Unless overridden by a Kubernetes annotation. See [docs/architecture.md](docs/architecture.md#metadata-resolution).
+
+### Kubernetes annotations (optional)
+
+Prefix: `github-deployment-bridge.io/` — for example `environment`, `repository`, `auto-report`, `deployment-name`. Full list and priority rules: [docs/architecture.md](docs/architecture.md#kubernetes-annotations).
 
 ## Install
 
@@ -76,7 +86,7 @@ PATs are not supported. Details: [docs/install.md#github-app-setup](docs/install
 Env vars and Helm mapping: [docs/configuration.md](docs/configuration.md).
 
 Why a PVC: SQLite at `/data/cache.db` deduplicates
-`(owner, repo, environment, commitSHA)` across restarts - see
+`(owner, repo, environment, commitSHA, deploymentName)` across restarts - see
 [docs/install.md#why-a-pvc](docs/install.md#why-a-pvc).
 
 ## Observability

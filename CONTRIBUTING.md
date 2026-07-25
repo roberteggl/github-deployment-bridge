@@ -14,7 +14,7 @@ Thanks for helping improve **github-deployment-bridge**.
 - See [docs/architecture.md](docs/architecture.md) and
   [docs/development.md](docs/development.md) for how the controller works and
   how to build/test locally.
-- Security issues: report privately via [SECURITY.md](SECURITY.md) — do not open
+- Security issues: report privately via [SECURITY.md](SECURITY.md) - do not open
   a public issue for exploitable vulnerabilities.
 
 ## Development setup
@@ -44,7 +44,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/) so
 
 ```text
 feat: report deployment failures when Ready=False
-fix: skip workloads with missing OCI labels
+fix: skip workloads with missing metadata
 docs: clarify GitHub App permissions
 ci: pin Scorecard action digest
 chore(deps): update controller-runtime
@@ -89,13 +89,13 @@ reuse lint
 ## What is in / out of scope
 
 **In scope:** observing successful Flux reconciliations and syncing GitHub
-Deployments from OCI labels; reliability, metrics, docs, Helm chart, CI.
+Deployments from OCI labels and optional annotations; reliability, metrics, docs, Helm chart, CI.
 
 **Out of scope (unless agreed):** GitOps reconciliation, image automation,
 triggering deployments, or turning the bridge into a general CD orchestrator.
 
 Future ideas (e.g. `failure` / `in_progress` statuses, HelmRelease support)
-are welcome as proposals — open an issue first for larger work.
+are welcome as proposals - open an issue first for larger work.
 
 ## Releases
 
