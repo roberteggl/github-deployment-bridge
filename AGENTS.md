@@ -17,7 +17,7 @@ When a Flux `Kustomization` or `HelmRelease` reconciles, the bridge:
 1. Derives a deployment phase (`queued` / `in_progress` / `success` / `failure`)
 2. Discovers workload images from `.status.inventory` (`Deployment`, `StatefulSet`, `DaemonSet`)
 3. Reads OCI labels (`source`, `revision`, optional `version`/`title`/`created`) - no layer pulls
-4. Merges optional `github-deployment-bridge.io/*` annotations (annotation > OCI > default)
+4. Merges `github-deployment-bridge.io/*` annotations (opt-in via `auto-report=true`; annotation > OCI > default)
 5. Authenticates as a GitHub App (never a PAT)
 6. Creates a GitHub Deployment once and updates Deployment Status through the lifecycle
 7. Deduplicates via SQLite on `(owner, repo, environment, commitSHA, deploymentName)` + latest status
