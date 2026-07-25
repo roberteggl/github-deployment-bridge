@@ -12,7 +12,7 @@ SPDX-License-Identifier: Apache-2.0
 # Secret must already exist (see Secrets)
 helm upgrade --install github-deployment-bridge \
   oci://ghcr.io/roberteggl/charts/github-deployment-bridge \
-  --version 1.3.2 \
+  --version 1.3.3 \
   --namespace flux-system \
   --create-namespace \
   --set github.existingSecret=github-deployment-bridge \
@@ -56,7 +56,7 @@ persistence:
 ```bash
 helm upgrade --install github-deployment-bridge \
   oci://ghcr.io/roberteggl/charts/github-deployment-bridge \
-  --version 1.3.2 \
+  --version 1.3.3 \
   --namespace flux-system \
   -f values-production.yaml
 ```
