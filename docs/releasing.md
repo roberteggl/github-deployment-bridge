@@ -19,10 +19,12 @@ Releases are fully automated on `v*` tag push via
    - Trivy scan of each digest (`HIGH`/`CRITICAL`, ignore unfixed) before merge
    - push-by-digest → merge manifest list on GHCR
    - BuildKit SBOM + provenance
-   - Sigstore keyless Cosign signature
+   - Sigstore keyless Cosign signature (legacy `sha256-*.sig` tags; Cosign v3
+     defaults break Artifact Hub signature detection)
    - GitHub Artifact Attestation (SLSA provenance, pushed to GHCR)
-4. **Helm** - package chart, attest `.tgz` + OCI chart, push to `oci://ghcr.io/<owner>/charts`,
-   and push [`artifacthub-repo.yml`](https://github.com/roberteggl/github-deployment-bridge/blob/main/artifacthub-repo.yml) as the
+4. **Helm** - package chart, push to `oci://ghcr.io/<owner>/charts`, Cosign-sign
+   the chart (Artifact Hub Signed badge), attest `.tgz` + OCI chart, and push
+   [`artifacthub-repo.yml`](https://github.com/roberteggl/github-deployment-bridge/blob/main/artifacthub-repo.yml) as the
    `artifacthub.io` OCI tag (Artifact Hub ownership / verified publisher)
 5. **GitHub Release** - cliff notes + verify commands; attaches chart `.tgz` plus the
    Sigstore attestation bundle as `.sigstore.json` and `.intoto.jsonl` (OpenSSF
@@ -89,10 +91,16 @@ Each GitHub Release also attaches the Helm chart Sigstore bundle next to the
 - `github-deployment-bridge-<version>.tgz.sigstore.json`
 - `github-deployment-bridge-<version>.tgz.intoto.jsonl`
 
-Prefer `gh attestation verify` against the chart (or Cosign against the image).
-The release-side copies exist so [OpenSSF Scorecard Signed-Releases](https://github.com/ossf/scorecard/blob/main/docs/checks.md#signed-releases)
+Prefer `gh attestation verify` against the chart (or Cosign against the image /
+chart OCI refs). The release-side copies exist so [OpenSSF Scorecard
+Signed-Releases](https://github.com/ossf/scorecard/blob/main/docs/checks.md#signed-releases)
 can see signature/provenance assets; Scorecard does not yet consume the GitHub
 Attestations API.
+
+Cosign v3 defaults to the new Sigstore bundle format stored via the OCI
+referrers API. Artifact Hub still indexes the legacy `sha256-<digest>.sig` tag
+layout, so the release workflow signs with `--new-bundle-format=false
+--use-signing-config=false`.
 
 ## Artifact Hub
 
@@ -110,7 +118,8 @@ ghcr.io/roberteggl/charts/github-deployment-bridge:artifacthub.io
    `oci://ghcr.io/roberteggl/charts/github-deployment-bridge`
    (repository ID `8a8ee5d5-8afa-41fc-9a95-5d51e6ccd952` is already set in
    `artifacthub-repo.yml`).
-2. Push the metadata (next release does this automatically), or manually:
+2. Push the metadata (each release does this automatically), or manually / via
+   **Actions → Artifact Hub metadata → Run workflow**:
 
 ```bash
 oras push \
@@ -128,6 +137,12 @@ cosign verify \
   --certificate-identity-regexp='https://github.com/roberteggl/github-deployment-bridge/.*' \
   --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
   ghcr.io/roberteggl/github-deployment-bridge:0.1.0
+
+# Cosign (Helm chart OCI signature — Artifact Hub Signed badge)
+cosign verify \
+  --certificate-identity-regexp='https://github.com/roberteggl/github-deployment-bridge/.*' \
+  --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
+  ghcr.io/roberteggl/charts/github-deployment-bridge:0.1.0
 
 # GitHub Artifact Attestations (image)
 gh attestation verify \

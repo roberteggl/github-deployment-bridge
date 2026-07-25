@@ -303,11 +303,17 @@ jobs:
       - name: Install Cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
+      # Cosign v3 defaults to the new Sigstore bundle + OCI referrers API.
+      # Artifact Hub (and many verifiers) still discover legacy sha256-*.sig tags,
+      # so force the classic layout until AH indexes referrers-based signatures.
       - name: Sign image (keyless)
         env:
           COSIGN_YES: "true"
         run: |
-          cosign sign "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.digest.outputs.digest }}"
+          cosign sign \
+            --new-bundle-format=false \
+            --use-signing-config=false \
+            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.digest.outputs.digest }}"
 
       - name: Attest image build provenance
         id: attest-image
@@ -388,6 +394,21 @@ jobs:
           test -n "${digest}"
           echo "digest=${digest}" >> "$GITHUB_OUTPUT"
 
+      # Artifact Hub's Helm "Signed" badge looks for a Cosign signature on the
+      # chart OCI artifact (legacy .sig tags). See image sign step for why
+      # --new-bundle-format=false is required.
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Sign chart (keyless)
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign sign \
+            --new-bundle-format=false \
+            --use-signing-config=false \
+            "${{ env.REGISTRY }}/${{ github.repository_owner }}/charts/github-deployment-bridge@${{ steps.push.outputs.digest }}"
+
       - name: Attest chart OCI provenance
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
         with:
@@ -454,7 +475,7 @@ jobs:
             echo
             echo "## Supply chain"
             echo
-            echo "- Image signed with Sigstore keyless Cosign"
+            echo "- Image + Helm chart signed with Sigstore keyless Cosign (legacy \`.sig\` tags for Artifact Hub)"
             echo "- GitHub Artifact Attestations (SLSA provenance) for image + Helm chart"
             echo "- Release assets include the chart Sigstore bundle as \`.sigstore.json\` and \`.intoto.jsonl\` (same attestation; Scorecard Signed-Releases)"
             echo "- Attestations: https://github.com/${{ github.repository }}/attestations"
@@ -472,6 +493,11 @@ jobs:
             echo "  --certificate-identity-regexp='https://github.com/${{ github.repository }}/.*' \\"
             echo "  --certificate-oidc-issuer=https://token.actions.githubusercontent.com \\"
             echo "  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.changelog.outputs.version }}"
+            echo
+            echo "cosign verify \\"
+            echo "  --certificate-identity-regexp='https://github.com/${{ github.repository }}/.*' \\"
+            echo "  --certificate-oidc-issuer=https://token.actions.githubusercontent.com \\"
+            echo "  ${{ env.REGISTRY }}/${{ github.repository_owner }}/charts/github-deployment-bridge:${{ needs.changelog.outputs.version }}"
             echo
             echo "gh attestation verify \\"
             echo "  oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-image.outputs.digest }} \\"

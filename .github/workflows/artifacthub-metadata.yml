@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# One-shot / on-demand push of Artifact Hub OCI repository metadata.
+# Needed for Verified Publisher; also runs automatically on each release.
+name: Artifact Hub metadata
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  push:
+    name: Push artifacthub.io tag
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@abd2ef45e78c5afb21d64d4ca52ee8550d9572c7 # v4.5.1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up ORAS
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+
+      - name: Push Artifact Hub repository metadata
+        run: |
+          set -euo pipefail
+          oras push \
+            "ghcr.io/${{ github.repository_owner }}/charts/github-deployment-bridge:artifacthub.io" \
+            --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
+            artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml
