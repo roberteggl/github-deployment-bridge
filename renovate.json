@@ -95,6 +95,12 @@
       "groupName": "helm",
       "automerge": true,
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"]
+    },
+    {
+      "description": "Chart ships its own image via appVersion; do not pin digests",
+      "matchManagers": ["helmv3", "helm-values"],
+      "matchPackageNames": ["ghcr.io/roberteggl/github-deployment-bridge"],
+      "enabled": false
     }
   ],
   "customManagers": [
