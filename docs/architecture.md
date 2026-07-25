@@ -160,7 +160,11 @@ Missing or invalid required metadata → skip reporting and emit a warning. Neve
 | Environment URL | Status `environment_url` |
 | Log URL | Status `log_url` |
 
-Deployment `payload` includes `cluster`, `namespace`, source name (`kustomization` / `helmRelease`), `deploymentName`, `image`, optional `digest` / `version`, and `controllerVersion`.
+Deployment `payload` includes `cluster`, `namespace` (workload), `sourceNamespace` (Flux
+Kustomization / HelmRelease namespace), source name (`kustomization` / `helmRelease`),
+`deploymentName`, `image`, optional `digest` / `version`, and `controllerVersion`.
+Crash recovery also matches older payloads that used the Flux source namespace as
+`namespace` and omitted `sourceNamespace`.
 
 Status updates set `auto_inactive=true`. When a newer commit reaches `success` for the same identity, prior cached `success` deployments are explicitly marked `inactive`.
 

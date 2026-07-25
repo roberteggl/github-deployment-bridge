@@ -9,7 +9,9 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/roberteggl/github-deployment-bridge/internal/cache"
 	"github.com/roberteggl/github-deployment-bridge/internal/config"
@@ -107,7 +109,7 @@ func newTestReporter(t *testing.T, g *fakeGitHub) (*deployment.Reporter, *fakeGi
 
 func sampleInput(phase deployment.Phase) deployment.ReportInput {
 	return deployment.ReportInput{
-		Namespace:  "apps",
+		Namespace:  "flux-system",
 		SourceKind: "Kustomization",
 		SourceName: "backend",
 		Phase:      phase,
@@ -143,6 +145,12 @@ func TestReporterCatchUpSuccessAndSkipsDuplicates(t *testing.T) {
 	}
 	if g.deployments[0].Payload["cluster"] != "production-eu" {
 		t.Fatalf("payload cluster = %#v", g.deployments[0].Payload["cluster"])
+	}
+	if g.deployments[0].Payload["namespace"] != "apps" {
+		t.Fatalf("payload namespace = %#v, want apps (workload)", g.deployments[0].Payload["namespace"])
+	}
+	if g.deployments[0].Payload["sourceNamespace"] != "flux-system" {
+		t.Fatalf("payload sourceNamespace = %#v, want flux-system", g.deployments[0].Payload["sourceNamespace"])
 	}
 	if g.deployments[0].Payload["kustomization"] != "backend" {
 		t.Fatalf("payload kustomization = %#v", g.deployments[0].Payload["kustomization"])
@@ -186,9 +194,10 @@ func TestReporterRecoversDeploymentAfterCreateCrash(t *testing.T) {
 			ID:          42,
 			Ref:         "deadbeefcafebabe",
 			Environment: "production",
+			// Legacy payload: Flux source namespace, no sourceNamespace.
 			Payload: map[string]any{
 				"cluster":           "production-eu",
-				"namespace":         "apps",
+				"namespace":         "flux-system",
 				"deploymentName":    "backend",
 				"image":             "ghcr.io/example/backend:v1.2.3",
 				"controllerVersion": "test",
@@ -461,4 +470,163 @@ func statusStates(g *fakeGitHub) []string {
 		out[i] = s.State
 	}
 	return out
+}
+
+type logRecord struct {
+	Level slog.Level
+	Msg   string
+}
+
+type captureHandler struct {
+	mu      sync.Mutex
+	records []logRecord
+}
+
+func (h *captureHandler) Enabled(context.Context, slog.Level) bool { return true }
+func (h *captureHandler) Handle(_ context.Context, r slog.Record) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.records = append(h.records, logRecord{Level: r.Level, Msg: r.Message})
+	return nil
+}
+func (h *captureHandler) WithAttrs([]slog.Attr) slog.Handler { return h }
+func (h *captureHandler) WithGroup(string) slog.Handler      { return h }
+
+func (h *captureHandler) count(level slog.Level, msg string) int {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	n := 0
+	for _, r := range h.records {
+		if r.Level == level && r.Msg == msg {
+			n++
+		}
+	}
+	return n
+}
+
+func TestReporterPermanentResolveFailureIsQuietOnErrorStatus(t *testing.T) {
+	t.Parallel()
+
+	store, err := cache.Open(filepath.Join(t.TempDir(), "cache.db"))
+	if err != nil {
+		t.Fatalf("open cache: %v", err)
+	}
+	t.Cleanup(func() { _ = store.Close() })
+
+	h := &captureHandler{}
+	log := slog.New(h)
+	cfg := config.Config{ClusterName: "c", Environment: "staging"}
+	reg := &fakeRegistry{meta: ocilabels.Metadata{
+		Source:   "https://github.com/example/backend",
+		Revision: "bad", // invalid commit → permanent resolve failure
+	}}
+	g := &fakeGitHub{}
+	r := deployment.NewReporter(cfg, store, reg, g, nil, log, "test")
+
+	if err := r.Report(context.Background(), sampleInput(deployment.PhaseSuccess)); err != nil {
+		t.Fatalf("invalid metadata should not fail reconcile: %v", err)
+	}
+	if got := h.count(slog.LevelWarn, "failed to report deployment for image"); got != 1 {
+		t.Fatalf("primary warn count = %d, want 1", got)
+	}
+	if got := h.count(slog.LevelWarn, "failed to emit error status"); got != 0 {
+		t.Fatalf("error-status warn count = %d, want 0", got)
+	}
+	if len(g.deployments) != 0 || len(g.statuses) != 0 {
+		t.Fatalf("expected no github calls, got deps=%d statuses=%d", len(g.deployments), len(g.statuses))
+	}
+}
+
+func TestReporterPermanentWarnTTL(t *testing.T) {
+	t.Parallel()
+
+	store, err := cache.Open(filepath.Join(t.TempDir(), "cache.db"))
+	if err != nil {
+		t.Fatalf("open cache: %v", err)
+	}
+	t.Cleanup(func() { _ = store.Close() })
+
+	h := &captureHandler{}
+	log := slog.New(h)
+	cfg := config.Config{ClusterName: "c", Environment: "staging"}
+	reg := &fakeRegistry{meta: ocilabels.Metadata{
+		Source:   "https://github.com/example/backend",
+		Revision: "bad",
+	}}
+	g := &fakeGitHub{}
+	r := deployment.NewReporter(cfg, store, reg, g, nil, log, "test")
+
+	now := time.Date(2026, 7, 25, 12, 0, 0, 0, time.UTC)
+	r.ConfigureWarnDedupeForTest(func() time.Time { return now }, time.Hour)
+
+	in := sampleInput(deployment.PhaseSuccess)
+	if err := r.Report(context.Background(), in); err != nil {
+		t.Fatalf("first report: %v", err)
+	}
+	if err := r.Report(context.Background(), in); err != nil {
+		t.Fatalf("second report: %v", err)
+	}
+	if got := h.count(slog.LevelWarn, "failed to report deployment for image"); got != 1 {
+		t.Fatalf("warns within TTL = %d, want 1", got)
+	}
+
+	now = now.Add(time.Hour + time.Second)
+	if err := r.Report(context.Background(), in); err != nil {
+		t.Fatalf("third report: %v", err)
+	}
+	if got := h.count(slog.LevelWarn, "failed to report deployment for image"); got != 2 {
+		t.Fatalf("warns after TTL = %d, want 2", got)
+	}
+}
+
+func TestReporterClearsPermanentWarnOnSuccess(t *testing.T) {
+	t.Parallel()
+
+	store, err := cache.Open(filepath.Join(t.TempDir(), "cache.db"))
+	if err != nil {
+		t.Fatalf("open cache: %v", err)
+	}
+	t.Cleanup(func() { _ = store.Close() })
+
+	h := &captureHandler{}
+	log := slog.New(h)
+	cfg := config.Config{ClusterName: "c", Environment: "production"}
+	reg := &fakeRegistry{meta: ocilabels.Metadata{
+		Source:   "https://github.com/example/backend",
+		Revision: "bad",
+	}}
+	g := &fakeGitHub{}
+	r := deployment.NewReporter(cfg, store, reg, g, nil, log, "test")
+
+	now := time.Date(2026, 7, 25, 12, 0, 0, 0, time.UTC)
+	r.ConfigureWarnDedupeForTest(func() time.Time { return now }, time.Hour)
+
+	in := sampleInput(deployment.PhaseSuccess)
+	if err := r.Report(context.Background(), in); err != nil {
+		t.Fatalf("bad report: %v", err)
+	}
+	if got := h.count(slog.LevelWarn, "failed to report deployment for image"); got != 1 {
+		t.Fatalf("initial warn count = %d, want 1", got)
+	}
+
+	reg.meta = ocilabels.Metadata{
+		Source:   "https://github.com/example/backend",
+		Revision: "deadbeefcafebabe",
+		Version:  "v1.2.3",
+		Digest:   "sha256:abc",
+	}
+	if err := r.Report(context.Background(), in); err != nil {
+		t.Fatalf("success report: %v", err)
+	}
+
+	reg.meta = ocilabels.Metadata{
+		Source:   "https://github.com/example/backend",
+		Revision: "bad",
+	}
+	if err := r.Report(context.Background(), in); err != nil {
+		t.Fatalf("bad again: %v", err)
+	}
+	if got := h.count(slog.LevelWarn, "failed to report deployment for image"); got != 2 {
+		t.Fatalf("warn after clear = %d, want 2", got)
+	}
 }

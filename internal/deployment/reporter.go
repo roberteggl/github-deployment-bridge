@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/roberteggl/github-deployment-bridge/internal/cache"
@@ -22,6 +23,10 @@ import (
 	"github.com/roberteggl/github-deployment-bridge/pkg/ocilabels"
 	"github.com/roberteggl/github-deployment-bridge/pkg/retry"
 )
+
+// permanentWarnTTL suppresses repeated permanent-failure WARNs for the same
+// workload+image+error within this window (in-memory only).
+const permanentWarnTTL = time.Hour
 
 // WorkloadImage is a container image discovered from a reconciled workload.
 type WorkloadImage struct {
@@ -51,6 +56,11 @@ type Reporter struct {
 	metrics           *metrics.Metrics
 	log               *slog.Logger
 	controllerVersion string
+
+	warnMu     sync.Mutex
+	warnAt     map[string]time.Time // permanent warn dedupe: key → last warn time
+	now        func() time.Time     // injectable clock for tests; nil → time.Now
+	warnTTL    time.Duration        // zero → permanentWarnTTL
 }
 
 // NewReporter constructs a Reporter.
@@ -77,6 +87,58 @@ func NewReporter(
 		metrics:           m,
 		log:               log,
 		controllerVersion: controllerVersion,
+		warnAt:            make(map[string]time.Time),
+	}
+}
+
+func (r *Reporter) currentTime() time.Time {
+	if r.now != nil {
+		return r.now()
+	}
+	return time.Now()
+}
+
+func (r *Reporter) permanentWarnWindow() time.Duration {
+	if r.warnTTL > 0 {
+		return r.warnTTL
+	}
+	return permanentWarnTTL
+}
+
+func permanentWarnKey(img WorkloadImage, image string, err error) string {
+	return img.Kind + "/" + img.Namespace + "/" + img.Name + "/" + image + "\x00" + err.Error()
+}
+
+func workloadImagePrefix(img WorkloadImage, image string) string {
+	return img.Kind + "/" + img.Namespace + "/" + img.Name + "/" + image + "\x00"
+}
+
+// shouldLogPermanentWarn reports whether a permanent-failure WARN should be
+// emitted. When true, it records the warn timestamp for TTL suppression.
+func (r *Reporter) shouldLogPermanentWarn(img WorkloadImage, image string, err error) bool {
+	key := permanentWarnKey(img, image, err)
+	now := r.currentTime()
+	ttl := r.permanentWarnWindow()
+
+	r.warnMu.Lock()
+	defer r.warnMu.Unlock()
+	if last, ok := r.warnAt[key]; ok && now.Sub(last) < ttl {
+		return false
+	}
+	r.warnAt[key] = now
+	return true
+}
+
+// clearPermanentWarns drops dedupe entries for a workload+image after success
+// so a later failure warns immediately.
+func (r *Reporter) clearPermanentWarns(img WorkloadImage, image string) {
+	prefix := workloadImagePrefix(img, image)
+	r.warnMu.Lock()
+	defer r.warnMu.Unlock()
+	for key := range r.warnAt {
+		if strings.HasPrefix(key, prefix) {
+			delete(r.warnAt, key)
+		}
 	}
 }
 
@@ -109,6 +171,7 @@ func (r *Reporter) Report(ctx context.Context, in ReportInput) error {
 					r.log.Debug("skipping workload",
 						"reason", skip.Reason,
 						"namespace", img.Namespace,
+						"source_namespace", in.Namespace,
 						"workload_kind", img.Kind,
 						"workload_name", img.Name,
 					)
@@ -117,7 +180,8 @@ func (r *Reporter) Report(ctx context.Context, in ReportInput) error {
 				r.log.Info("skipping workload",
 					"reason", skip.Reason,
 					"cluster", r.cfg.ClusterName,
-					"namespace", in.Namespace,
+					"namespace", img.Namespace,
+					"source_namespace", in.Namespace,
 					"source_kind", in.SourceKind,
 					"source_name", in.SourceName,
 					"workload_kind", img.Kind,
@@ -126,28 +190,30 @@ func (r *Reporter) Report(ctx context.Context, in ReportInput) error {
 				)
 				continue
 			}
-			r.log.Warn("failed to report deployment for image",
-				"error", err,
-				"cluster", r.cfg.ClusterName,
-				"namespace", in.Namespace,
-				"source_kind", in.SourceKind,
-				"source_name", in.SourceName,
-				"workload_kind", img.Kind,
-				"workload_name", img.Name,
-				"image", image,
-			)
+			if !retry.IsPermanent(err) || r.shouldLogPermanentWarn(img, image, err) {
+				r.log.Warn("failed to report deployment for image",
+					"error", err,
+					"cluster", r.cfg.ClusterName,
+					"namespace", img.Namespace,
+					"source_namespace", in.Namespace,
+					"source_kind", in.SourceKind,
+					"source_name", in.SourceName,
+					"workload_kind", img.Kind,
+					"workload_name", img.Name,
+					"image", image,
+				)
+			}
 			if retry.IsPermanent(err) {
 				// After a deployment exists, permanent bridge faults become error status.
-				if reportErr := r.tryReportError(ctx, in, img, err); reportErr != nil {
+				if reportErr := r.tryReportError(ctx, in, img); reportErr != nil {
 					r.log.Warn("failed to emit error status", "error", reportErr)
-				} else if r.metrics != nil {
-					r.metrics.DeploymentErrorsTotal.Inc()
 				}
 				continue
 			}
 			transient = err
 			continue
 		}
+		r.clearPermanentWarns(img, image)
 	}
 	return transient
 }
@@ -386,10 +452,58 @@ func (r *Reporter) resolveOrCreateDeployment(
 	if found != nil && found.ID != 0 {
 		return found.ID, nil
 	}
+
+	// Crash recovery for deployments created before workload-namespace payloads.
+	legacy := r.buildLegacyDeploymentPayload(in, img, resolved, digest)
+	found, err = r.github.FindDeployment(ctx, gh.FindDeploymentRequest{
+		Owner:       resolved.Repo.Owner,
+		Repo:        resolved.Repo.Name,
+		Ref:         resolved.Commit,
+		Environment: resolved.Environment,
+		Payload:     legacy,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("find github deployment: %w", err)
+	}
+	if found != nil && found.ID != 0 {
+		return found.ID, nil
+	}
+
 	return r.createDeployment(ctx, in, img, resolved, digest, payload)
 }
 
 func (r *Reporter) buildDeploymentPayload(
+	in ReportInput,
+	img WorkloadImage,
+	resolved metadata.Resolved,
+	digest string,
+) map[string]any {
+	payload := map[string]any{
+		"cluster":           r.cfg.ClusterName,
+		"namespace":         img.Namespace,
+		"sourceNamespace":   in.Namespace,
+		"deploymentName":    resolved.DeploymentName,
+		"image":             img.Image,
+		"controllerVersion": r.controllerVersion,
+	}
+	switch strings.ToLower(in.SourceKind) {
+	case "helmrelease":
+		payload["helmRelease"] = in.SourceName
+	default:
+		payload["kustomization"] = in.SourceName
+	}
+	if digest != "" {
+		payload["digest"] = digest
+	}
+	if resolved.Version != "" {
+		payload["version"] = resolved.Version
+	}
+	return payload
+}
+
+// buildLegacyDeploymentPayload matches pre-workload-namespace payloads used for
+// FindDeployment crash recovery (namespace = Flux source namespace, no sourceNamespace).
+func (r *Reporter) buildLegacyDeploymentPayload(
 	in ReportInput,
 	img WorkloadImage,
 	resolved metadata.Resolved,
@@ -513,10 +627,11 @@ func (r *Reporter) markPriorInactive(ctx context.Context, key cache.Key, resolve
 	return nil
 }
 
-func (r *Reporter) tryReportError(ctx context.Context, in ReportInput, img WorkloadImage, cause error) error {
+func (r *Reporter) tryReportError(ctx context.Context, in ReportInput, img WorkloadImage) error {
 	resolved, _, err := r.resolveImage(ctx, img)
 	if err != nil {
-		return err
+		// Already logged as the primary permanent failure; nothing to emit.
+		return nil
 	}
 	key := cache.Key{
 		Owner:          resolved.Repo.Owner,
@@ -527,7 +642,8 @@ func (r *Reporter) tryReportError(ctx context.Context, in ReportInput, img Workl
 	}
 	existing, err := r.cache.Get(ctx, key)
 	if err != nil || existing == nil || existing.DeploymentID == 0 {
-		return cause
+		// No deployment to update — this path only applies after create.
+		return nil
 	}
 	current := Phase(existing.Status)
 	if current == PhaseError || !CanTransition(current, PhaseError) {
@@ -537,8 +653,12 @@ func (r *Reporter) tryReportError(ctx context.Context, in ReportInput, img Workl
 		return err
 	}
 	existing.Status = cache.StatusError
-	existing.ReportedAt = time.Now().UTC()
-	return r.cache.Put(ctx, *existing)
+	existing.ReportedAt = r.currentTime().UTC()
+	if err := r.cache.Put(ctx, *existing); err != nil {
+		return err
+	}
+	r.observeStatusMetric(PhaseError)
+	return nil
 }
 
 func (r *Reporter) observeStatusMetric(step Phase) {
@@ -570,7 +690,8 @@ func (r *Reporter) logTransition(
 		"previous_state", string(prev),
 		"new_state", string(next),
 		"cluster", r.cfg.ClusterName,
-		"namespace", in.Namespace,
+		"namespace", img.Namespace,
+		"source_namespace", in.Namespace,
 		"source_kind", in.SourceKind,
 		"source_name", in.SourceName,
 		"deployment_name", resolved.DeploymentName,
@@ -580,6 +701,12 @@ func (r *Reporter) logTransition(
 		"workload_kind", img.Kind,
 		"workload_name", img.Name,
 	)
+}
+
+// ConfigureWarnDedupeForTest overrides the warn clock and TTL (tests only).
+func (r *Reporter) ConfigureWarnDedupeForTest(now func() time.Time, ttl time.Duration) {
+	r.now = now
+	r.warnTTL = ttl
 }
 
 func hasAnnotationOverrides(ann map[string]string) bool {
