@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "@rspress/core": "2.0.18",
-    "@types/node": "^22.15.30",
+    "@types/node": "^24.0.0",
     "rspress-plugin-mermaid": "^1.0.1",
     "typescript": "^5.8.3"
   },
