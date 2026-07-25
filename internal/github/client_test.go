@@ -141,7 +141,6 @@ func TestAppClientCreateDeploymentAndStatus(t *testing.T) {
 	}
 }
 
-
 func TestAppClientFindDeployment(t *testing.T) {
 	t.Parallel()
 

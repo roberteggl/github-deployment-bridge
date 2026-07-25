@@ -29,10 +29,10 @@ func (f *fakeRegistry) Inspect(context.Context, string) (ocilabels.Metadata, err
 }
 
 type fakeGitHub struct {
-	deployments []gh.DeploymentRequest
-	statuses    []gh.DeploymentStatusRequest
-	nextID      int64
-	statusErr   error
+	deployments       []gh.DeploymentRequest
+	statuses          []gh.DeploymentStatusRequest
+	nextID            int64
+	statusErr         error
 	listedDeployments []struct {
 		ID          int64
 		Ref         string
@@ -155,7 +155,6 @@ func TestReporterCatchUpSuccessAndSkipsDuplicates(t *testing.T) {
 		t.Fatalf("duplicate not prevented: got %d deployments and %d statuses", len(g.deployments), len(g.statuses))
 	}
 }
-
 
 func TestReporterRecoversDeploymentAfterCreateCrash(t *testing.T) {
 	t.Parallel()
