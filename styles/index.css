@@ -1,0 +1,74 @@
+/* SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev> */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/*
+ * Flat, restrained palette — no blue/purple gradients or glow washes.
+ * Brand CTA and hero name share --rp-home-hero-title-bg (Rspress default).
+ */
+
+:root {
+  --rp-c-brand: #1f2937;
+  --rp-c-brand-light: #374151;
+  --rp-c-brand-lighter: #e5e7eb;
+  --rp-c-brand-dark: #111827;
+  --rp-c-brand-darker: #030712;
+  --rp-c-brand-tint: #11182714;
+}
+
+html:not(.rp-dark) {
+  --rp-home-hero-secondary-color: #111827;
+  --rp-home-hero-title-color: transparent;
+  --rp-home-hero-title-bg: #111827;
+  --rp-home-background-bg: #ffffff;
+  --rp-home-feature-bg: #ffffff;
+}
+
+html.rp-dark {
+  --rp-c-brand: #e5e7eb;
+  --rp-c-brand-light: #f3f4f6;
+  --rp-c-brand-lighter: #374151;
+  --rp-c-brand-dark: #f9fafb;
+  --rp-c-brand-darker: #ffffff;
+  --rp-c-brand-tint: #f9fafb1a;
+
+  --rp-home-hero-secondary-color: #f9fafb;
+  --rp-home-hero-title-color: transparent;
+  --rp-home-hero-title-bg: #f3f4f6;
+  --rp-home-background-bg: #0b0d10;
+  --rp-home-feature-bg: #12151a;
+}
+
+.rp-home-background {
+  display: none !important;
+}
+
+.rp-home-hero__title-brand {
+  background: var(--rp-home-hero-title-bg) !important;
+  background-image: none !important;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.rp-button--brand,
+.rp-button--brand:hover {
+  background: var(--rp-home-hero-title-bg) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.rp-button--brand:hover {
+  opacity: 0.88;
+}
+
+.rp-home-feature__card {
+  backdrop-filter: none !important;
+  background: var(--rp-home-feature-bg) !important;
+  border-radius: 0.75rem;
+  box-shadow: none;
+}
+
+.rp-home-feature__card:hover {
+  border-color: var(--rp-c-divider);
+  color: inherit;
+}

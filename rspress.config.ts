@@ -34,6 +34,7 @@ const config: UserConfig = {
   route: {
     cleanUrls: true,
   },
+  globalStyles: path.join(__dirname, "styles/index.css"),
   themeConfig: {
     socialLinks: [
       {
@@ -60,7 +61,7 @@ const config: UserConfig = {
           tag: "meta",
           attrs: {
             name: "theme-color",
-            content: "#0b1020",
+            content: "#111827",
           },
         },
       ],
