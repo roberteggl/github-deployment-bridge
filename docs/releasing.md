@@ -138,7 +138,7 @@ cosign verify \
   --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
   ghcr.io/roberteggl/github-deployment-bridge:0.1.0
 
-# Cosign (Helm chart OCI signature — Artifact Hub Signed badge)
+# Cosign (Helm chart OCI signature - Artifact Hub Signed badge)
 cosign verify \
   --certificate-identity-regexp='https://github.com/roberteggl/github-deployment-bridge/.*' \
   --certificate-oidc-issuer=https://token.actions.githubusercontent.com \

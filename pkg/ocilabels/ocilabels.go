@@ -20,8 +20,8 @@ const (
 //   - Revision (org.opencontainers.image.revision)
 //
 // Optional:
-//   - Version, Title, Created — used for logging and diagnostics.
-//   - Digest — image manifest digest when known from registry inspect.
+//   - Version, Title, Created - used for logging and diagnostics.
+//   - Digest - image manifest digest when known from registry inspect.
 type Metadata struct {
 	Source   string
 	Revision string

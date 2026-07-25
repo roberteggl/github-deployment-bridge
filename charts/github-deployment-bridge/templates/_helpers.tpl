@@ -58,7 +58,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 {{/*
 Payload hashed into checksum/config so env / listen-port / registry changes
-roll the Deployment. Keep selectorLabels out of this — they must stay stable.
+roll the Deployment. Keep selectorLabels out of this - they must stay stable.
 */}}
 {{- define "github-deployment-bridge.configChecksum" -}}
 {{- toYaml (dict

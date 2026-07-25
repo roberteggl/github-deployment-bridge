@@ -2,7 +2,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 /*
- * Flat, restrained palette — no blue/purple gradients or glow washes.
+ * Flat, restrained palette - no blue/purple gradients or glow washes.
  */
 
 :root {
@@ -45,7 +45,7 @@ html.rp-dark {
   display: none !important;
 }
 
-/* Plain ink text — do not use background-clip (Rspress gradient trick). */
+/* Plain ink text - do not use background-clip (Rspress gradient trick). */
 .rp-home-hero__title-brand {
   background: none !important;
   background-image: none !important;

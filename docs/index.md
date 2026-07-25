@@ -15,7 +15,7 @@ hero:
       link: /architecture
 features:
   - title: Observe, don't orchestrate
-    details: Watches Flux conditions and reports queued, in_progress, success, and failure — without reconciling GitOps state or triggering deploys.
+    details: Watches Flux conditions and reports queued, in_progress, success, and failure - without reconciling GitOps state or triggering deploys.
     icon: "◎"
     span: 4
   - title: OCI-native identity
@@ -27,7 +27,7 @@ features:
     icon: "◇"
     span: 4
   - title: Idempotent by design
-    details: SQLite deduplicates on owner, repo, environment, commit, and deployment name; crash recovery reuses existing GitHub Deployments when the cache has a provisional row — and marks prior successes inactive when a newer commit lands.
+    details: SQLite deduplicates on owner, repo, environment, commit, and deployment name; crash recovery reuses existing GitHub Deployments when the cache has a provisional row - and marks prior successes inactive when a newer commit lands.
     icon: "⬡"
     span: 4
   - title: Flux Kustomization & HelmRelease

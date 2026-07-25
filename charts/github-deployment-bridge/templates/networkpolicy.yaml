@@ -17,7 +17,7 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # Match container listen ports (not service.*Port — those are Service-facing).
+    # Match container listen ports (not service.*Port - those are Service-facing).
     - ports:
         - protocol: TCP
           port: {{ .Values.containerPorts.metrics }}

@@ -27,7 +27,7 @@ prometheusRule:
 App-metric alerts need the ServiceMonitor (or equivalent scrape) so series carry
 `namespace` and `pod` labels.
 
-Do **not** page on `deployment_failures_total` — that counts Flux/app
+Do **not** page on `deployment_failures_total` - that counts Flux/app
 `failure` statuses (expected when a reconciliation fails). Use
 `deployment_errors_total` for bridge-only faults.
 
@@ -39,10 +39,10 @@ Do **not** page on `deployment_failures_total` — that counts Flux/app
 
 **Check:**
 
-1. `kubectl -n <ns> describe deploy <release>` — events for FailedAttachVolume,
+1. `kubectl -n <ns> describe deploy <release>` - events for FailedAttachVolume,
    ImagePullBackOff, CrashLoopBackOff.
 2. With `persistence.enabled` (default), upgrades use `Recreate`. A stuck old
-   pod holding an RWO volume blocks the new pod — delete the old pod only if it
+   pod holding an RWO volume blocks the new pod - delete the old pod only if it
    is Terminating / stuck; otherwise wait for detach.
 3. Confirm `replicaCount: 1` with a PVC (chart fails closed on multi-replica +
    PVC).
@@ -52,7 +52,7 @@ Do **not** page on `deployment_failures_total` — that counts Flux/app
 
 **Alert:** `GitHubDeploymentBridgeErrors`
 
-**Meaning:** `deployment_errors_total` is rising — the bridge posted GitHub
+**Meaning:** `deployment_errors_total` is rising - the bridge posted GitHub
 Deployment status `error` (its own fault), not Flux `failure`.
 
 **Check:**
@@ -106,4 +106,4 @@ When alerts are quiet but GitHub shows no Deployment:
 3. Environment name: distinct `config.environment` per cluster if multiple
    bridges share a repo.
 4. Dedup cache: same `(owner, repo, environment, commit, deploymentName)` skips
-   duplicates — expected after retries.
+   duplicates - expected after retries.

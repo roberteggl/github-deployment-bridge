@@ -53,7 +53,7 @@ spec:
             summary: Bridge is emitting GitHub Deployment error statuses
             description: >-
               deployment_errors_total is increasing for {{ $fullname }} in {{ $ns }}
-              — bridge-only faults (not Flux app failures). Check App credentials,
+              - bridge-only faults (not Flux app failures). Check App credentials,
               cache, and logs.
             runbook_url: {{ printf "%s#bridge-errors" $runbook | quote }}
 

@@ -32,7 +32,7 @@ flowchart LR
 Disable persistence only for ephemeral/dev clusters. Without a PVC, an
 `emptyDir` is used and the cache is wiped on every pod reschedule (duplicate
 Deployments may appear in GitHub). Multi-replica is not supported with
-persistence — SQLite does not provide safe multi-writer semantics. See
+persistence - SQLite does not provide safe multi-writer semantics. See
 [Install → Single replica](../install/persistence.md#single-replica-production-default).
 
 Why this matters: [Install → Why a PVC?](../install/persistence.md)

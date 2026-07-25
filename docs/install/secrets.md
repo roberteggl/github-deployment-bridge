@@ -51,7 +51,7 @@ watching the Secret.
 
 Pass values at install time **and** opt in with `github.allowInsecureValues=true`.
 Inline credentials are stored in the Helm release Secret (`sh.helm.release.v1.*`)
-as well as the chart-managed Secret — fine for local/dev; prefer an external
+as well as the chart-managed Secret - fine for local/dev; prefer an external
 Secret manager or sealed/SOPS secret in production:
 
 ```bash

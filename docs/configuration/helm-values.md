@@ -21,17 +21,17 @@ SPDX-License-Identifier: Apache-2.0
 | `config.retry.maxBackoff` | `RETRY_MAX_BACKOFF` |
 | _(fixed by chart)_ | `DATABASE=/data/cache.db` |
 | `github.existingSecret` / chart Secret | `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, key file |
-| `github.allowInsecureValues` | _(chart only)_ — allow inline `appId` / `installationId` / `privateKey` (Helm release Secret risk) |
-| `commonLabels` / `podLabels` | _(chart only)_ — extra labels on all resources / pod template only |
-| `rbac.create` | _(chart only)_ — emit RBAC |
-| `networkPolicy.enabled` | _(chart only)_ — emit NetworkPolicy |
-| `networkPolicy.ingress.metricsFrom` | _(chart only)_ — optional scrape peers |
+| `github.allowInsecureValues` | _(chart only)_ - allow inline `appId` / `installationId` / `privateKey` (Helm release Secret risk) |
+| `commonLabels` / `podLabels` | _(chart only)_ - extra labels on all resources / pod template only |
+| `rbac.create` | _(chart only)_ - emit RBAC |
+| `networkPolicy.enabled` | _(chart only)_ - emit NetworkPolicy |
+| `networkPolicy.ingress.metricsFrom` | _(chart only)_ - optional scrape peers |
 | `networkPolicy.egress.allowDNS` / `allowHTTPS` / `allowKubeAPI` / `kubeAPIPorts` / `extraEgress` | _(chart only)_ |
 | `containerPorts.metrics` / `containerPorts.probes` | `METRICS_ADDR` / `PROBE_ADDR` listen ports (also NetworkPolicy ingress) |
-| `serviceMonitor.enabled` | _(chart only)_ — emit Prometheus Operator ServiceMonitor |
-| `serviceMonitor.labels` / `interval` / `scrapeTimeout` / … | _(chart only)_ — scrape tuning |
-| `prometheusRule.enabled` | _(chart only)_ — emit PrometheusRule alerts |
-| `prometheusRule.labels` / thresholds / `runbookURL` | _(chart only)_ — alert tuning |
+| `serviceMonitor.enabled` | _(chart only)_ - emit Prometheus Operator ServiceMonitor |
+| `serviceMonitor.labels` / `interval` / `scrapeTimeout` / … | _(chart only)_ - scrape tuning |
+| `prometheusRule.enabled` | _(chart only)_ - emit PrometheusRule alerts |
+| `prometheusRule.labels` / thresholds / `runbookURL` | _(chart only)_ - alert tuning |
 
 `values.schema.json` validates types and enums (e.g. `config.logLevel`) on
 `helm install` / `upgrade` / `lint` / `template`. Config and chart-managed
@@ -62,7 +62,7 @@ networkPolicy:
       - namespaceSelector:
           matchLabels:
             name: monitoring
-  # allowKubeAPI: true (default) — TCP 6443 for the apiserver
+  # allowKubeAPI: true (default) - TCP 6443 for the apiserver
   #   (:443 covered by allowHTTPS; add to kubeAPIPorts if you disable HTTPS)
   # egress.extraEgress: []  # optional CIDR-scoped kube-API rules
 serviceMonitor:

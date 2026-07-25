@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # GitHub Deployment Bridge
 
-Helm chart for [GitHub Deployment Bridge](https://github.com/roberteggl/github-deployment-bridge) — a Kubernetes controller that reports FluxCD `Kustomization` / `HelmRelease` reconciliations to the GitHub Deployments API.
+Helm chart for [GitHub Deployment Bridge](https://github.com/roberteggl/github-deployment-bridge) - a Kubernetes controller that reports FluxCD `Kustomization` / `HelmRelease` reconciliations to the GitHub Deployments API.
 
 **Docs:** [Install](https://roberteggl.github.io/github-deployment-bridge/install/) · [Configuration](https://roberteggl.github.io/github-deployment-bridge/configuration/) · [Architecture](https://roberteggl.github.io/github-deployment-bridge/architecture)
 

@@ -104,7 +104,7 @@ func (r *Reporter) Report(ctx context.Context, in ReportInput) error {
 		if err := r.reportImage(ctx, in, img); err != nil {
 			var skip *metadata.SkipError
 			if errors.As(err, &skip) {
-				// Opt-in skips are expected for most cluster workloads — stay quiet.
+				// Opt-in skips are expected for most cluster workloads - stay quiet.
 				if strings.HasPrefix(skip.Reason, "auto-report") {
 					r.log.Debug("skipping workload",
 						"reason", skip.Reason,
@@ -311,7 +311,7 @@ func transitionSteps(from, to Phase) []Phase {
 }
 
 func (r *Reporter) resolveImage(ctx context.Context, img WorkloadImage) (metadata.Resolved, string, error) {
-	// Opt-in before touching the registry — missing/false skips quietly.
+	// Opt-in before touching the registry - missing/false skips quietly.
 	raw, ok := img.Annotations[metadata.AnnotationAutoReport]
 	if !ok {
 		return metadata.Resolved{}, "", &metadata.SkipError{Reason: "auto-report not enabled"}

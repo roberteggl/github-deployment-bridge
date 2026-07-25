@@ -42,7 +42,7 @@ networkPolicy:
     allowHTTPS: true
     # Kubernetes API (controller watches). Default :6443 covers common
     # distributions; in-cluster API on :443 is already allowed by allowHTTPS.
-    # Destination is not CIDR-scoped — tighten via extraEgress if required.
+    # Destination is not CIDR-scoped - tighten via extraEgress if required.
     allowKubeAPI: true
     kubeAPIPorts:
       - 6443
@@ -50,7 +50,7 @@ networkPolicy:
     extraEgress: []
 
 # Opt-in Prometheus Operator ServiceMonitor. Requires the monitoring.coreos.com
-# CRDs. /metrics is unauthenticated HTTP — pair with networkPolicy + metricsFrom
+# CRDs. /metrics is unauthenticated HTTP - pair with networkPolicy + metricsFrom
 # when the CNI enforces NetworkPolicy.
 serviceMonitor:
   enabled: false
@@ -129,7 +129,7 @@ persistence:
   size: 1Gi
   storageClass: ""
   # ReadWriteOnce is the production default. replicaCount must stay 1 even with
-  # ReadWriteMany — SQLite does not support safe multi-writer semantics (enforced).
+  # ReadWriteMany - SQLite does not support safe multi-writer semantics (enforced).
   accessMode: ReadWriteOnce
 
 # Bridge configuration
@@ -156,7 +156,7 @@ github:
   existingSecret: ""
   # Or provide values directly. Requires allowInsecureValues=true because the
   # PEM is stored in the Helm release Secret (sh.helm.release.v1.*) as well as
-  # the chart-managed Secret — not recommended for production.
+  # the chart-managed Secret - not recommended for production.
   allowInsecureValues: false
   appId: ""
   installationId: ""

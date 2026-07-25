@@ -12,14 +12,14 @@ Watch namespace: all namespaces (ClusterRole)
 {{- end }}
 {{- if not .Values.persistence.enabled }}
 
-WARNING: persistence.enabled is false — /data uses emptyDir.
+WARNING: persistence.enabled is false - /data uses emptyDir.
   The SQLite deduplication cache is lost on every pod reschedule; duplicate
   GitHub Deployments may be created. Keep persistence.enabled=true in production.
 {{- else }}
 
 Persistence: /data is backed by a PVC. Deployment strategy is Recreate so
   upgrades do not leave a new pod Pending while the volume is on the old pod.
-  Single-writer only — keep replicaCount: 1 (chart fails multi-replica + PVC).
+  Single-writer only - keep replicaCount: 1 (chart fails multi-replica + PVC).
 {{- end }}
 {{- if .Values.networkPolicy.enabled }}
 
@@ -61,13 +61,13 @@ Private registries (e.g. GHCR): set registry.existingDockerConfigSecret
 {{- if .Values.github.existingSecret }}
 
 GitHub credentials: existing Secret {{ .Values.github.existingSecret | quote }}.
-  Rotating that Secret does not restart pods — run
+  Rotating that Secret does not restart pods - run
   kubectl -n {{ .Release.Namespace }} rollout restart deployment/{{ include "github-deployment-bridge.fullname" . }}
   (or use Reloader / a similar controller).
 {{- else }}
 
 GitHub credentials: chart-managed Secret (checksum/secret rolls pods on change).
-  Requires github.allowInsecureValues=true — the PEM is also stored in the Helm
+  Requires github.allowInsecureValues=true - the PEM is also stored in the Helm
   release Secret. Prefer github.existingSecret in production.
 {{- end }}
 
