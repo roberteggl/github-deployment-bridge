@@ -39,22 +39,12 @@ Required image labels:
 | `org.opencontainers.image.revision` | `0123456789abcdef` |
 | `org.opencontainers.image.version` | `v1.8.4` |
 
-## Install with Helm
+## Install
 
-```bash
-helm upgrade --install github-deployment-bridge \
-  charts/github-deployment-bridge \
-  --namespace flux-system \
-  --set config.clusterName=production-eu \
-  --set config.environment=production \
-  --set config.environmentURL=https://app.example.com \
-  --set config.logURLTemplate='https://grafana.example.com/explore?commit={sha}' \
-  --set github.appId=123456 \
-  --set github.installationId=987654 \
-  --set-file github.privateKey=./github-app.pem
-```
+Full guide (GitHub App permissions, secrets, PVC, Helm values, verify):
+**[docs/install.md](docs/install.md)**.
 
-Or reference an existing secret:
+Quick start with an existing Secret:
 
 ```bash
 kubectl -n flux-system create secret generic github-deployment-bridge \
@@ -62,43 +52,32 @@ kubectl -n flux-system create secret generic github-deployment-bridge \
   --from-literal=installation-id=987654 \
   --from-file=private-key=./github-app.pem
 
-helm upgrade --install github-deployment-bridge charts/github-deployment-bridge \
+helm upgrade --install github-deployment-bridge \
+  oci://ghcr.io/roberteggl/charts/github-deployment-bridge \
+  --version 0.1.0 \
   --namespace flux-system \
   --set github.existingSecret=github-deployment-bridge \
   --set config.clusterName=production-eu \
   --set config.environment=production
 ```
 
-## GitHub App setup
+### GitHub App (summary)
 
-Create a GitHub App with:
+| Permission | Access |
+|---|---|
+| **Deployments** | Read & Write |
+| **Contents** | Read |
+| **Metadata** | Read |
 
-- **Deployments**: Read & Write
-- **Metadata**: Read
-- **Contents**: Read
+PATs are not supported. Details: [docs/install.md#github-app-setup](docs/install.md#github-app-setup).
 
-Install it on the repositories you deploy, then configure:
+### Configuration
 
-- `GITHUB_APP_ID`
-- `GITHUB_INSTALLATION_ID`
-- `GITHUB_PRIVATE_KEY_PATH`
+Env vars and Helm mapping: [docs/configuration.md](docs/configuration.md).
 
-Personal access tokens are not supported.
-
-## Configuration
-
-See [docs/configuration.md](docs/configuration.md).
-
-Key settings:
-
-```yaml
-clusterName: production-eu
-environment: production
-watchNamespace: flux-system
-database: /data/cache.db
-environmentURL: https://app.example.com
-logURLTemplate: https://grafana.example.com/explore?commit={sha}
-```
+Why a PVC: SQLite at `/data/cache.db` deduplicates
+`(owner, repo, environment, commitSHA)` across restarts - see
+[docs/install.md#why-a-pvc](docs/install.md#why-a-pvc).
 
 ## Observability
 
@@ -110,21 +89,9 @@ logURLTemplate: https://grafana.example.com/explore?commit={sha}
 
 Metrics include `deployment_reports_total`, `deployment_failures_total`, `github_api_requests_total`, `github_api_latency_seconds`, `oci_requests_total`, `cache_hits_total`, and `cache_misses_total`.
 
-## Install from a release
-
-```bash
-helm install github-deployment-bridge \
-  oci://ghcr.io/roberteggl/charts/github-deployment-bridge \
-  --version 0.1.0 \
-  --namespace flux-system \
-  --set config.clusterName=production-eu \
-  --set config.environment=production \
-  --set github.existingSecret=github-deployment-bridge
-```
-
 Image: `ghcr.io/roberteggl/github-deployment-bridge:<version>` (multi-arch `amd64`/`arm64`, Cosign-signed, SLSA-attested).
 
-Verify: [docs/releasing.md](docs/releasing.md#verify-signatures-and-attestations) · [Attestations](https://github.com/roberteggl/github-deployment-bridge/attestations)
+Verify artifacts: [docs/releasing.md](docs/releasing.md#verify-signatures-and-attestations) · [Attestations](https://github.com/roberteggl/github-deployment-bridge/attestations)
 
 ## Development
 
@@ -132,8 +99,9 @@ Verify: [docs/releasing.md](docs/releasing.md#verify-signatures-and-attestations
 make tidy test build
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [docs/development.md](docs/development.md),
-[docs/architecture.md](docs/architecture.md), and [docs/releasing.md](docs/releasing.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md), [docs/install.md](docs/install.md),
+[docs/development.md](docs/development.md), [docs/architecture.md](docs/architecture.md),
+and [docs/releasing.md](docs/releasing.md).
 
 ## Non-goals
 

@@ -14,7 +14,7 @@ bridges FluxCD reconciliations to the GitHub Deployments API.
 When a Flux `Kustomization` becomes Ready, the bridge:
 
 1. Discovers workload images (`Deployment`, `StatefulSet`, `DaemonSet`)
-2. Reads OCI labels (`source`, `revision`, `version`) — no layer pulls
+2. Reads OCI labels (`source`, `revision`, `version`) - no layer pulls
 3. Authenticates as a GitHub App (never a PAT)
 4. Creates a GitHub Deployment + `success` status
 5. Deduplicates via SQLite on `(owner, repo, environment, commitSHA)`
@@ -31,10 +31,11 @@ Read these before making non-trivial changes:
 
 | Doc | Contents |
 |---|---|
-| [README.md](README.md) | Overview, install, GitHub App setup |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | DCO, Conventional Commits, PR process |
+| [README.md](README.md) | Overview, quick start |
+| [docs/install.md](docs/install.md) | Cluster install, GitHub App, secrets, PVC |
+| [docs/configuration.md](docs/configuration.md) | Env vars, Helm values, permissions, registries |
 | [docs/architecture.md](docs/architecture.md) | Event flow, workload discovery, OCI labels |
-| [docs/configuration.md](docs/configuration.md) | Env vars, permissions, private registries |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | DCO, Conventional Commits, PR process |
 | [docs/development.md](docs/development.md) | Build, test, local run, integration tests |
 | [docs/releasing.md](docs/releasing.md) | Tag-driven release pipeline (git-cliff, GHCR, Helm) |
 

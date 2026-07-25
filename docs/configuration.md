@@ -6,7 +6,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # Configuration
 
-The bridge is configured entirely via environment variables.
+The bridge is configured entirely via environment variables. When installed with
+Helm, set the corresponding `config.*` / `github.*` / `persistence.*` values
+instead (see [install.md](install.md)).
+
+## Environment variables
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
@@ -28,26 +32,89 @@ The bridge is configured entirely via environment variables.
 | `RETRY_INITIAL_BACKOFF` | no | `500ms` | Initial retry backoff |
 | `RETRY_MAX_BACKOFF` | no | `30s` | Maximum retry backoff |
 
-## Example
+## Helm values map
+
+| Helm value | Environment variable |
+|---|---|
+| `config.clusterName` | `CLUSTER_NAME` |
+| `config.environment` | `ENVIRONMENT` |
+| `config.watchNamespace` | `WATCH_NAMESPACE` |
+| `config.environmentURL` | `ENVIRONMENT_URL` |
+| `config.logURLTemplate` | `LOG_URL_TEMPLATE` |
+| `config.leaderElection` | `LEADER_ELECTION` |
+| `config.githubBaseURL` | `GITHUB_BASE_URL` |
+| _(fixed by chart)_ | `DATABASE=/data/cache.db` |
+| `github.existingSecret` / chart Secret | `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, key file |
+
+Example `values.yaml` snippet:
 
 ```yaml
-clusterName: production-eu
-environment: production
-watchNamespace: flux-system
-database: /data/cache.db
-environmentURL: https://app.example.com
-logURLTemplate: https://grafana.example.com/explore?commit={sha}
+config:
+  clusterName: production-eu
+  environment: production
+  watchNamespace: flux-system
+  environmentURL: https://app.example.com
+  logURLTemplate: https://grafana.example.com/explore?commit={sha}
+
+github:
+  existingSecret: github-deployment-bridge
+
+persistence:
+  enabled: true
+  size: 1Gi
 ```
+
+## Secrets
+
+Credentials come from a Kubernetes Secret (never a PAT). Required keys:
+
+| Key | Used as |
+|---|---|
+| `app-id` | `GITHUB_APP_ID` |
+| `installation-id` | `GITHUB_INSTALLATION_ID` |
+| `private-key` | PEM file mounted at `/github/private-key.pem` |
+
+Create it yourself and set `github.existingSecret`, or pass `github.appId`,
+`github.installationId`, and `github.privateKey` so the chart creates the
+Secret. Prefer an externally managed Secret in production.
+
+```bash
+kubectl -n flux-system create secret generic github-deployment-bridge \
+  --from-literal=app-id=123456 \
+  --from-literal=installation-id=987654 \
+  --from-file=private-key=./github-app.pem
+```
+
+## Persistence (PVC)
+
+The SQLite cache at `DATABASE` (`/data/cache.db` in the chart) stores
+`(owner, repo, environment, commitSHA)` so the same commit is not reported
+twice when Flux re-reconciles.
+
+| Helm value | Default | Description |
+|---|---|---|
+| `persistence.enabled` | `true` | Use a PVC for `/data` |
+| `persistence.size` | `1Gi` | Claim size |
+| `persistence.storageClass` | `""` | Empty = cluster default |
+| `persistence.accessMode` | `ReadWriteOnce` | Single writer |
+
+Disable only for ephemeral/dev clusters. Without a PVC, an `emptyDir` is used
+and the cache is wiped on every pod reschedule (duplicate Deployments may
+appear in GitHub).
 
 ## GitHub App permissions
 
-The GitHub App needs only:
+Repository permissions required:
 
-- **Deployments**: Read & Write
-- **Metadata**: Read
-- **Contents**: Read
+| Permission | Access | Why |
+|---|---|---|
+| **Deployments** | Read & Write | Create Deployments and status updates |
+| **Contents** | Read | Resolve the commit SHA / ref for a Deployment |
+| **Metadata** | Read | Baseline App access to repository metadata |
 
-Never use a personal access token.
+Webhook: leave inactive. Personal access tokens are not supported.
+
+Full setup steps: [install.md#github-app-setup](install.md#github-app-setup).
 
 ## Private registries
 
@@ -55,4 +122,4 @@ The bridge uses the default Docker/OCI keychain (`authn.DefaultKeychain`).
 For private registries, mount a Docker config into the pod and set
 `DOCKER_CONFIG` (or mount at `/home/nonroot/.docker/config.json`).
 
-Only the image manifest and config blob are fetched — layers are never pulled.
+Only the image manifest and config blob are fetched - layers are never pulled.
