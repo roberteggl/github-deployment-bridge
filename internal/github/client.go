@@ -7,6 +7,7 @@ package github
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -52,9 +53,20 @@ type DeploymentResult struct {
 	ID int64
 }
 
+// FindDeploymentRequest locates an existing deployment for crash recovery.
+type FindDeploymentRequest struct {
+	Owner       string
+	Repo        string
+	Ref         string
+	Environment string
+	// Payload must match the deployment payload created by the bridge.
+	Payload map[string]any
+}
+
 // Client creates GitHub Deployments and statuses.
 type Client interface {
 	CreateDeployment(ctx context.Context, req DeploymentRequest) (*DeploymentResult, error)
+	FindDeployment(ctx context.Context, req FindDeploymentRequest) (*DeploymentResult, error)
 	CreateDeploymentStatus(ctx context.Context, req DeploymentStatusRequest) error
 }
 
@@ -158,6 +170,40 @@ func (c *AppClient) CreateDeployment(ctx context.Context, req DeploymentRequest)
 	return result, nil
 }
 
+// FindDeployment returns a deployment matching ref, environment, and payload.
+// Returns nil when no matching deployment exists.
+func (c *AppClient) FindDeployment(ctx context.Context, req FindDeploymentRequest) (*DeploymentResult, error) {
+	var result *DeploymentResult
+	err := retry.Do(ctx, c.retry, func(ctx context.Context) error {
+		start := time.Now()
+		opts := &github.DeploymentsListOptions{
+			Environment: req.Environment,
+			Ref:         req.Ref,
+			ListOptions: github.ListOptions{PerPage: 100},
+		}
+		deployments, resp, err := c.client.Repositories.ListDeployments(ctx, req.Owner, req.Repo, opts)
+		c.observe("list_deployments", start, err, resp)
+		if err != nil {
+			return classifyGitHubError(err, resp)
+		}
+		for _, dep := range deployments {
+			if dep == nil || dep.GetID() == 0 {
+				continue
+			}
+			if !deploymentPayloadMatches(dep.GetPayload(), req.Payload) {
+				continue
+			}
+			result = &DeploymentResult{ID: dep.GetID()}
+			return nil
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 // CreateDeploymentStatus creates a deployment status.
 func (c *AppClient) CreateDeploymentStatus(ctx context.Context, req DeploymentStatusRequest) error {
 	return retry.Do(ctx, c.retry, func(ctx context.Context) error {
@@ -201,6 +247,23 @@ func (c *AppClient) observe(operation string, start time.Time, err error, resp *
 		c.metrics.GitHubAPIFailuresTotal.Inc()
 	}
 	c.metrics.GitHubAPIRequestsTotal.WithLabelValues(operation, result).Inc()
+}
+
+func deploymentPayloadMatches(raw json.RawMessage, expected map[string]any) bool {
+	if len(expected) == 0 || len(raw) == 0 {
+		return false
+	}
+	var actual map[string]any
+	if err := json.Unmarshal(raw, &actual); err != nil {
+		return false
+	}
+	for key, want := range expected {
+		got, ok := actual[key]
+		if !ok || fmt.Sprint(got) != fmt.Sprint(want) {
+			return false
+		}
+	}
+	return true
 }
 
 func classifyGitHubError(err error, resp *github.Response) error {

@@ -141,6 +141,81 @@ func TestAppClientCreateDeploymentAndStatus(t *testing.T) {
 	}
 }
 
+
+func TestAppClientFindDeployment(t *testing.T) {
+	t.Parallel()
+
+	keyPath := generateRSAKey(t)
+
+	mux := http.NewServeMux()
+	tokenHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"token":      "v1.install-token",
+			"expires_at": "2099-01-01T00:00:00Z",
+		})
+	}
+	mux.HandleFunc("/app/installations/99/access_tokens", tokenHandler)
+	mux.HandleFunc("/api/v3/app/installations/99/access_tokens", tokenHandler)
+
+	listHandler := func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Query().Get("ref") != "abc123" || r.URL.Query().Get("environment") != "production" {
+			http.Error(w, "query", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode([]map[string]any{{
+			"id":          777,
+			"ref":         "abc123",
+			"environment": "production",
+			"payload": map[string]any{
+				"cluster":        "prod",
+				"kustomization":  "backend",
+				"deploymentName": "backend",
+			},
+		}})
+	}
+	mux.HandleFunc("/repos/example/backend/deployments", listHandler)
+	mux.HandleFunc("/api/v3/repos/example/backend/deployments", listHandler)
+
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+
+	client, err := ghclient.NewAppClient(ghclient.Options{
+		AppID:          1,
+		InstallationID: 99,
+		PrivateKeyPath: keyPath,
+		BaseURL:        srv.URL,
+		Retry:          retry.Config{MaxAttempts: 1},
+		Transport:      http.DefaultTransport,
+	})
+	if err != nil {
+		t.Fatalf("NewAppClient: %v", err)
+	}
+
+	found, err := client.FindDeployment(context.Background(), ghclient.FindDeploymentRequest{
+		Owner:       "example",
+		Repo:        "backend",
+		Ref:         "abc123",
+		Environment: "production",
+		Payload: map[string]any{
+			"cluster":        "prod",
+			"kustomization":  "backend",
+			"deploymentName": "backend",
+		},
+	})
+	if err != nil {
+		t.Fatalf("FindDeployment: %v", err)
+	}
+	if found == nil || found.ID != 777 {
+		t.Fatalf("found = %#v, want id 777", found)
+	}
+}
+
 func generateRSAKey(t *testing.T) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "key.pem")
