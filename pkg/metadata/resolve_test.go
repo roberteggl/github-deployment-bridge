@@ -213,15 +213,15 @@ func TestResolveOptionalPayloadAnnotations(t *testing.T) {
 	t.Parallel()
 
 	ann := map[string]string{
-		metadata.AnnotationAutoReport:     "true",
-		metadata.AnnotationCluster:        "prod-eu-west",
-		metadata.AnnotationTeam:           "platform",
-		metadata.AnnotationService:        "checkout",
-		metadata.AnnotationComponent:      "api",
-		metadata.AnnotationSlackChannel:   "#deploys",
-		metadata.AnnotationOwner:          "alice",
-		metadata.AnnotationRelease:        "2026.07.25",
-		metadata.AnnotationTag:            "v1.2.3",
+		metadata.AnnotationAutoReport:   "true",
+		metadata.AnnotationCluster:      "prod-eu-west",
+		metadata.AnnotationTeam:         "platform",
+		metadata.AnnotationService:      "checkout",
+		metadata.AnnotationComponent:    "api",
+		metadata.AnnotationSlackChannel: "#deploys",
+		metadata.AnnotationOwner:        "alice",
+		metadata.AnnotationRelease:      "2026.07.25",
+		metadata.AnnotationTag:          "v1.2.3",
 	}
 	got, err := metadata.Resolve(ann, ocilabels.Metadata{
 		Source:   "https://github.com/example/backend",
