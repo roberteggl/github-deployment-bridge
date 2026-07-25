@@ -59,7 +59,7 @@ kubectl -n flux-system create secret generic github-deployment-bridge \
 
 helm upgrade --install github-deployment-bridge \
   oci://ghcr.io/roberteggl/charts/github-deployment-bridge \
-  --version 1.3.0 \
+  --version 1.3.1 \
   --namespace flux-system \
   --set github.existingSecret=github-deployment-bridge \
   --set config.clusterName=production-eu \

@@ -57,7 +57,7 @@ Secret manager or sealed/SOPS secret in production:
 ```bash
 helm upgrade --install github-deployment-bridge \
   oci://ghcr.io/roberteggl/charts/github-deployment-bridge \
-  --version 1.3.0 \
+  --version 1.3.1 \
   --namespace flux-system \
   --set github.allowInsecureValues=true \
   --set github.appId=123456 \
