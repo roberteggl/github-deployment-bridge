@@ -118,7 +118,8 @@ jobs:
           helm lint charts/github-deployment-bridge \
             --set github.appId=1 \
             --set github.installationId=1 \
-            --set github.privateKey=ci-fake-key
+            --set github.privateKey=ci-fake-key \
+            --set github.allowInsecureValues=true
 
       - name: Template chart
         run: |
@@ -126,6 +127,7 @@ jobs:
             --set github.appId=1 \
             --set github.installationId=1 \
             --set github.privateKey=ci-fake-key \
+            --set github.allowInsecureValues=true \
             --set config.clusterName=ci \
             --set config.environment=staging \
             >/dev/null
@@ -136,6 +138,7 @@ jobs:
             --set github.appId=1 \
             --set github.installationId=1 \
             --set github.privateKey=ci-fake-key \
+            --set github.allowInsecureValues=true \
             --set replicaCount=2 \
             >/dev/null 2>&1; then
             echo "expected helm template to fail when replicaCount > 1 with PVC"
@@ -145,6 +148,7 @@ jobs:
             --set github.appId=1 \
             --set github.installationId=1 \
             --set github.privateKey=ci-fake-key \
+            --set github.allowInsecureValues=true \
             --set replicaCount=2 \
             --set persistence.accessMode=ReadWriteMany \
             >/dev/null 2>&1; then
@@ -158,6 +162,7 @@ jobs:
             --set github.appId=1 \
             --set github.installationId=1 \
             --set github.privateKey=ci-fake-key \
+            --set github.allowInsecureValues=true \
             --set config.watchNamespace=flux-system \
             --set networkPolicy.enabled=true \
             --set serviceMonitor.enabled=true \
@@ -189,6 +194,7 @@ jobs:
             --set github.appId=1 \
             --set github.installationId=1 \
             --set github.privateKey=ci-fake-key \
+            --set github.allowInsecureValues=true \
             --set networkPolicy.enabled=true \
             --set containerPorts.metrics=9090 \
             --set containerPorts.probes=9091 \
@@ -214,6 +220,7 @@ jobs:
             --set github.appId=1 \
             --set github.installationId=1 \
             --set github.privateKey=ci-fake-key \
+            --set github.allowInsecureValues=true \
             --set networkPolicy.enabled=true \
             --set networkPolicy.egress.allowKubeAPI=false)"
           np_no_kubeapi="$(echo "${no_kubeapi}" | awk '/kind: NetworkPolicy/,/^---$/')"
@@ -228,7 +235,8 @@ jobs:
           default="$(helm template github-deployment-bridge charts/github-deployment-bridge \
             --set github.appId=1 \
             --set github.installationId=1 \
-            --set github.privateKey=ci-fake-key)"
+            --set github.privateKey=ci-fake-key \
+            --set github.allowInsecureValues=true)"
           if echo "${default}" | grep -q 'kind: ServiceMonitor'; then
             echo "expected no ServiceMonitor when serviceMonitor.enabled is false"
             exit 1
@@ -254,6 +262,7 @@ jobs:
             --set github.appId=1 \
             --set github.installationId=1 \
             --set github.privateKey=ci-fake-key \
+            --set github.allowInsecureValues=true \
             --set config.logLevel=verbose \
             >/dev/null 2>&1; then
             echo "expected helm template to fail for invalid config.logLevel"
@@ -263,9 +272,41 @@ jobs:
             --set github.appId=1 \
             --set github.installationId=1 \
             --set github.privateKey=ci-fake-key \
+            --set github.allowInsecureValues=true \
             --set notARealValue=true \
             >/dev/null 2>&1; then
             echo "expected helm template to fail for unknown top-level value"
+            exit 1
+          fi
+          # H5: inline credentials require allowInsecureValues
+          if helm template github-deployment-bridge charts/github-deployment-bridge \
+            --set github.appId=1 \
+            --set github.installationId=1 \
+            --set github.privateKey=ci-fake-key \
+            >/dev/null 2>&1; then
+            echo "expected helm template to fail without github.allowInsecureValues"
+            exit 1
+          fi
+          # H6: pod template gets full label set; selectors stay stable
+          echo "${default}" | grep -q 'app.kubernetes.io/component: controller'
+          echo "${default}" | grep -q 'helm.sh/chart:'
+          labels="$(helm template github-deployment-bridge charts/github-deployment-bridge \
+            --set github.existingSecret=github-deployment-bridge \
+            --set commonLabels.team=platform \
+            --set podLabels.role=bridge)"
+          echo "${labels}" | grep -q 'team: platform'
+          echo "${labels}" | grep -q 'role: bridge'
+          dep_sel="$(echo "${labels}" | awk '/kind: Deployment/,/^---$/' | awk '/selector:/,/template:/')"
+          if echo "${dep_sel}" | grep -q 'app.kubernetes.io/version'; then
+            echo "Deployment selector must not include version labels"
+            exit 1
+          fi
+          if echo "${dep_sel}" | grep -q 'helm.sh/chart'; then
+            echo "Deployment selector must not include chart labels"
+            exit 1
+          fi
+          if echo "${dep_sel}" | grep -q 'team: platform'; then
+            echo "Deployment selector must not include commonLabels"
             exit 1
           fi
 

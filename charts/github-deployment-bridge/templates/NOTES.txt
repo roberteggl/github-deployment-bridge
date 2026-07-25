@@ -67,8 +67,8 @@ GitHub credentials: existing Secret {{ .Values.github.existingSecret | quote }}.
 {{- else }}
 
 GitHub credentials: chart-managed Secret (checksum/secret rolls pods on change).
-  Prefer github.existingSecret in production so the PEM is not stored in the
-  Helm release Secret.
+  Requires github.allowInsecureValues=true — the PEM is also stored in the Helm
+  release Secret. Prefer github.existingSecret in production.
 {{- end }}
 
 Metrics: http://{{ include "github-deployment-bridge.fullname" . }}:{{ .Values.service.metricsPort }}/metrics

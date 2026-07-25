@@ -5,3 +5,6 @@
 {{- if and .Values.persistence.enabled (gt (int .Values.replicaCount) 1) }}
 {{- fail (printf "github-deployment-bridge: replicaCount=%d with persistence.enabled=true is unsupported. The SQLite deduplication cache at /data/cache.db allows only one writer (even with ReadWriteMany). Set replicaCount: 1 (production default) or disable persistence only for ephemeral dev clusters. Multi-replica HA would require a shared database backend; this chart intentionally stays single-writer." (int .Values.replicaCount)) }}
 {{- end }}
+{{- if and (not .Values.github.existingSecret) (not .Values.github.allowInsecureValues) }}
+{{- fail "github-deployment-bridge: set github.existingSecret to an externally managed Secret (recommended). Inline github.appId / installationId / privateKey are stored in the Helm release Secret — only allowed when github.allowInsecureValues=true (local/dev)." }}
+{{- end }}

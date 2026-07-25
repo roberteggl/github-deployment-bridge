@@ -25,6 +25,10 @@ helm.sh/chart: {{ include "github-deployment-bridge.chart" . }}
 {{ include "github-deployment-bridge.selectorLabels" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/component: controller
+{{- with .Values.commonLabels }}
+{{ toYaml . }}
+{{- end }}
 {{- end }}
 
 {{- define "github-deployment-bridge.chart" -}}

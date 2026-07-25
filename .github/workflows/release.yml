@@ -76,7 +76,8 @@ jobs:
           helm lint "${CHART_PATH}" \
             --set github.appId=1 \
             --set github.installationId=1 \
-            --set github.privateKey=ci-fake-key
+            --set github.privateKey=ci-fake-key \
+            --set github.allowInsecureValues=true
 
       - name: Verify chart version matches tag
         run: |

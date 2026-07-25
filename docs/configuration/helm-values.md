@@ -21,6 +21,8 @@ SPDX-License-Identifier: Apache-2.0
 | `config.retry.maxBackoff` | `RETRY_MAX_BACKOFF` |
 | _(fixed by chart)_ | `DATABASE=/data/cache.db` |
 | `github.existingSecret` / chart Secret | `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, key file |
+| `github.allowInsecureValues` | _(chart only)_ — allow inline `appId` / `installationId` / `privateKey` (Helm release Secret risk) |
+| `commonLabels` / `podLabels` | _(chart only)_ — extra labels on all resources / pod template only |
 | `rbac.create` | _(chart only)_ — emit RBAC |
 | `networkPolicy.enabled` | _(chart only)_ — emit NetworkPolicy |
 | `networkPolicy.ingress.metricsFrom` | _(chart only)_ — optional scrape peers |

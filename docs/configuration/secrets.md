@@ -15,8 +15,10 @@ Credentials come from a Kubernetes Secret (never a PAT). Required keys:
 | `private-key` | PEM file mounted at `/github/private-key.pem` |
 
 Create it yourself and set `github.existingSecret`, or pass `github.appId`,
-`github.installationId`, and `github.privateKey` so the chart creates the
-Secret. Prefer an externally managed Secret in production.
+`github.installationId`, and `github.privateKey` with
+`github.allowInsecureValues=true` so the chart creates the Secret. Prefer an
+externally managed Secret in production — inline values are also stored in the
+Helm release history.
 
 Chart-managed Secrets trigger a Deployment rollout via a `checksum/secret`
 annotation. With `github.existingSecret`, restart the Deployment (or use

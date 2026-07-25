@@ -15,6 +15,11 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
+# Extra labels applied to all chart resources (merged into the standard label set).
+commonLabels: {}
+# Extra labels applied only to the pod template (in addition to commonLabels).
+podLabels: {}
+
 serviceAccount:
   create: true
   annotations: {}
@@ -149,7 +154,10 @@ github:
   # Name of an existing Secret containing:
   #   app-id, installation-id, private-key
   existingSecret: ""
-  # Or provide values directly (not recommended for production).
+  # Or provide values directly. Requires allowInsecureValues=true because the
+  # PEM is stored in the Helm release Secret (sh.helm.release.v1.*) as well as
+  # the chart-managed Secret — not recommended for production.
+  allowInsecureValues: false
   appId: ""
   installationId: ""
   # PEM contents of the GitHub App private key.

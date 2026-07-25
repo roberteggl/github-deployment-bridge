@@ -49,14 +49,17 @@ watching the Secret.
 
 ## Alternative: let Helm create the Secret
 
-Pass values at install time (fine for local/dev; prefer an external Secret
-manager or sealed/SOPS secret in production):
+Pass values at install time **and** opt in with `github.allowInsecureValues=true`.
+Inline credentials are stored in the Helm release Secret (`sh.helm.release.v1.*`)
+as well as the chart-managed Secret — fine for local/dev; prefer an external
+Secret manager or sealed/SOPS secret in production:
 
 ```bash
 helm upgrade --install github-deployment-bridge \
   oci://ghcr.io/roberteggl/charts/github-deployment-bridge \
   --version 1.2.2 \
   --namespace flux-system \
+  --set github.allowInsecureValues=true \
   --set github.appId=123456 \
   --set github.installationId=987654 \
   --set-file github.privateKey=./github-app.pem \

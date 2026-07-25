@@ -28,7 +28,10 @@ spec:
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- end }}
       labels:
-        {{- include "github-deployment-bridge.selectorLabels" . | nindent 8 }}
+        {{- include "github-deployment-bridge.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

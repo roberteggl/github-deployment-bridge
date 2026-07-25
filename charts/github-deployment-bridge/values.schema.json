@@ -27,6 +27,8 @@
     },
     "nameOverride": { "type": "string" },
     "fullnameOverride": { "type": "string" },
+    "commonLabels": { "type": "object" },
+    "podLabels": { "type": "object" },
     "serviceAccount": {
       "type": "object",
       "additionalProperties": false,
@@ -206,6 +208,7 @@
       "additionalProperties": false,
       "properties": {
         "existingSecret": { "type": "string" },
+        "allowInsecureValues": { "type": "boolean" },
         "appId": {
           "oneOf": [
             { "type": "string" },
