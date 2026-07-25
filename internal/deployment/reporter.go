@@ -104,6 +104,16 @@ func (r *Reporter) Report(ctx context.Context, in ReportInput) error {
 		if err := r.reportImage(ctx, in, img); err != nil {
 			var skip *metadata.SkipError
 			if errors.As(err, &skip) {
+				// Opt-in skips are expected for most cluster workloads — stay quiet.
+				if strings.HasPrefix(skip.Reason, "auto-report") {
+					r.log.Debug("skipping workload",
+						"reason", skip.Reason,
+						"namespace", img.Namespace,
+						"workload_kind", img.Kind,
+						"workload_name", img.Name,
+					)
+					continue
+				}
 				r.log.Info("skipping workload",
 					"reason", skip.Reason,
 					"cluster", r.cfg.ClusterName,
@@ -284,15 +294,17 @@ func transitionSteps(from, to Phase) []Phase {
 }
 
 func (r *Reporter) resolveImage(ctx context.Context, img WorkloadImage) (metadata.Resolved, string, error) {
-	// Opt-out before touching the registry.
-	if raw, ok := img.Annotations[metadata.AnnotationAutoReport]; ok {
-		v, parsed, err := metadata.ParseBoolAnnotation(raw)
-		if err != nil {
-			return metadata.Resolved{}, "", retry.Permanent(fmt.Errorf("%s: %w", metadata.AnnotationAutoReport, err))
-		}
-		if parsed && !v {
-			return metadata.Resolved{}, "", &metadata.SkipError{Reason: "auto-report=false"}
-		}
+	// Opt-in before touching the registry — missing/false skips quietly.
+	raw, ok := img.Annotations[metadata.AnnotationAutoReport]
+	if !ok {
+		return metadata.Resolved{}, "", &metadata.SkipError{Reason: "auto-report not enabled"}
+	}
+	v, parsed, err := metadata.ParseBoolAnnotation(raw)
+	if err != nil {
+		return metadata.Resolved{}, "", retry.Permanent(fmt.Errorf("%s: %w", metadata.AnnotationAutoReport, err))
+	}
+	if !parsed || !v {
+		return metadata.Resolved{}, "", &metadata.SkipError{Reason: "auto-report not enabled"}
 	}
 
 	ociMeta, err := r.registry.Inspect(ctx, img.Image)

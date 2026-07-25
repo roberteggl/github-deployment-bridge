@@ -16,7 +16,7 @@ const (
 	AnnotationLogURL         = AnnotationPrefix + "log-url"
 	AnnotationDescription    = AnnotationPrefix + "description"
 	AnnotationProduction     = AnnotationPrefix + "production"
-	AnnotationAutoReport     = AnnotationPrefix + "auto-report"
+	AnnotationAutoReport     = AnnotationPrefix + "auto-report" // must be "true" to report (opt-in)
 	AnnotationDeploymentName = AnnotationPrefix + "deployment-name"
 )
 

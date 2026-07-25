@@ -23,6 +23,7 @@ func TestResolvePriorityAndDefaults(t *testing.T) {
 		Created:  "2026-07-25T12:00:00Z",
 	}
 	ann := map[string]string{
+		metadata.AnnotationAutoReport:  "true",
 		metadata.AnnotationEnvironment: "production",
 	}
 	got, err := metadata.Resolve(ann, oci, metadata.Defaults{
@@ -65,6 +66,7 @@ func TestResolveAnnotationOverrides(t *testing.T) {
 		Revision: "aaaaaaaaaaaaaaaa",
 	}
 	ann := map[string]string{
+		metadata.AnnotationAutoReport:     "true",
 		metadata.AnnotationRepository:     "example/backend",
 		metadata.AnnotationCommit:         "bbbbbbbbbbbbbbbb",
 		metadata.AnnotationEnvironment:    "preview",
@@ -98,6 +100,19 @@ func TestResolveAnnotationOverrides(t *testing.T) {
 	}
 }
 
+func TestResolveAutoReportRequiresOptIn(t *testing.T) {
+	t.Parallel()
+
+	_, err := metadata.Resolve(nil, ocilabels.Metadata{
+		Source:   "https://github.com/example/backend",
+		Revision: "abcdef0123456789",
+	}, metadata.Defaults{Environment: "production"})
+	var skip *metadata.SkipError
+	if !errors.As(err, &skip) {
+		t.Fatalf("expected SkipError for missing auto-report, got %v", err)
+	}
+}
+
 func TestResolveAutoReportFalse(t *testing.T) {
 	t.Parallel()
 
@@ -113,18 +128,26 @@ func TestResolveAutoReportFalse(t *testing.T) {
 func TestResolveMissingRequired(t *testing.T) {
 	t.Parallel()
 
-	_, err := metadata.Resolve(nil, ocilabels.Metadata{
+	_, err := metadata.Resolve(map[string]string{
+		metadata.AnnotationAutoReport: "true",
+	}, ocilabels.Metadata{
 		Source: "https://github.com/example/backend",
 	}, metadata.Defaults{Environment: "production"})
 	if err == nil {
 		t.Fatal("expected error for missing commit")
+	}
+	var skip *metadata.SkipError
+	if errors.As(err, &skip) {
+		t.Fatalf("expected validation error, got SkipError: %v", err)
 	}
 }
 
 func TestResolveInvalidCommit(t *testing.T) {
 	t.Parallel()
 
-	_, err := metadata.Resolve(nil, ocilabels.Metadata{
+	_, err := metadata.Resolve(map[string]string{
+		metadata.AnnotationAutoReport: "true",
+	}, ocilabels.Metadata{
 		Source:   "https://github.com/example/backend",
 		Revision: "not-a-sha!",
 	}, metadata.Defaults{Environment: "production"})
@@ -137,6 +160,7 @@ func TestResolveInvalidHTTPSURL(t *testing.T) {
 	t.Parallel()
 
 	_, err := metadata.Resolve(map[string]string{
+		metadata.AnnotationAutoReport:     "true",
 		metadata.AnnotationEnvironmentURL: "http://insecure.example.com",
 	}, ocilabels.Metadata{
 		Source:   "https://github.com/example/backend",

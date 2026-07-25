@@ -40,9 +40,9 @@ flowchart TD
 
 \*Unless overridden by a Kubernetes annotation. See [docs/architecture.md](docs/architecture.md#metadata-resolution).
 
-### Kubernetes annotations (optional)
+### Kubernetes annotations (opt-in)
 
-Prefix: `github-deployment-bridge.io/` — for example `environment`, `repository`, `auto-report`, `deployment-name`. Full list and priority rules: [docs/architecture.md](docs/architecture.md#kubernetes-annotations).
+Prefix: `github-deployment-bridge.io/`. Workloads must set `auto-report=true` to be reported; all other annotations are optional overrides. Full list: [docs/architecture.md](docs/architecture.md#kubernetes-annotations).
 
 ## Install
 

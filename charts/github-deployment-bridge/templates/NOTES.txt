@@ -10,6 +10,7 @@ Ensure your container images include OCI labels:
 
 Optional workload annotations use prefix:
   github-deployment-bridge.io/
+Workloads must set github-deployment-bridge.io/auto-report=true to opt in.
 See docs/architecture.md for the full metadata specification.
 {{- if .Values.registry.existingDockerConfigSecret }}
 

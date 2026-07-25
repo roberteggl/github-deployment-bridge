@@ -26,6 +26,7 @@ flowchart TD
 
 ## Design principles
 
+- **Opt-in reporting** - only workloads with `github-deployment-bridge.io/auto-report=true` are reported; others are skipped quietly.
 - **OCI labels are canonical for build metadata** - repository and commit come from standard image labels.
 - **Kubernetes annotations are optional overrides** - deployment-specific environment, URLs, and opt-outs.
 - **Zero per-app mapping database** - no repository-specific configuration beyond annotations on the workload.
@@ -129,7 +130,7 @@ Prefix: `github-deployment-bridge.io/`
 | `log-url` | `LOG_URL_TEMPLATE` | Deployment Status `log_url` |
 | `description` | default text | Deployment description |
 | `production` | derived from env name | `production_environment` (`true`/`false`) |
-| `auto-report` | default `true` | `false` ignores the workload entirely |
+| `auto-report` | _(none)_ | **Opt-in.** Must be `true` to report; absent/`false` ignores the workload (no OCI fetch, no warning spam) |
 | `deployment-name` | repository name | Independent reports for monorepo workloads (also GitHub `task`) |
 
 Reserved for future use (recognized, ignored in v1): `team`, `service`, `component`, `slack-channel`, `owner`, `release`, `tag`, `cluster`.

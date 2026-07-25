@@ -56,7 +56,8 @@ func Resolve(annotations map[string]string, oci ocilabels.Metadata, defaults Def
 		ann = map[string]string{}
 	}
 
-	autoReport := true
+	// Opt-in: workloads are ignored unless github-deployment-bridge.io/auto-report=true.
+	autoReport := false
 	if raw, present := ann[AnnotationAutoReport]; present {
 		v, ok, err := ParseBoolAnnotation(raw)
 		if err != nil {
@@ -67,7 +68,7 @@ func Resolve(annotations map[string]string, oci ocilabels.Metadata, defaults Def
 		}
 	}
 	if !autoReport {
-		return Resolved{AutoReport: false}, &SkipError{Reason: "auto-report=false"}
+		return Resolved{AutoReport: false}, &SkipError{Reason: "auto-report not enabled (set github-deployment-bridge.io/auto-report=true)"}
 	}
 
 	repo, err := resolveRepository(ann, oci)

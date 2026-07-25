@@ -87,6 +87,9 @@ func sampleInput(phase deployment.Phase) deployment.ReportInput {
 			Kind:      "Deployment",
 			Name:      "backend",
 			Image:     "ghcr.io/example/backend:v1.2.3",
+			Annotations: map[string]string{
+				metadata.AnnotationAutoReport: "true",
+			},
 		}},
 	}
 }
@@ -263,6 +266,7 @@ func TestReporterAnnotationOverridesAndAutoReport(t *testing.T) {
 				Name:      "api",
 				Image:     "ghcr.io/example/shared:1",
 				Annotations: map[string]string{
+					metadata.AnnotationAutoReport:     "true",
 					metadata.AnnotationRepository:     "example/backend",
 					metadata.AnnotationEnvironment:    "production",
 					metadata.AnnotationDeploymentName: "api",
