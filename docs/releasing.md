@@ -21,7 +21,9 @@ Releases are fully automated on `v*` tag push via
    - BuildKit SBOM + provenance
    - Sigstore keyless Cosign signature
    - GitHub Artifact Attestation (SLSA provenance, pushed to GHCR)
-4. **Helm** - package chart, attest `.tgz` + OCI chart, push to `oci://ghcr.io/<owner>/charts`
+4. **Helm** - package chart, attest `.tgz` + OCI chart, push to `oci://ghcr.io/<owner>/charts`,
+   and push [`artifacthub-repo.yml`](../artifacthub-repo.yml) as the
+   `artifacthub.io` OCI tag (Artifact Hub ownership / verified publisher)
 5. **GitHub Release** - cliff notes + verify commands; attaches chart `.tgz` plus the
    Sigstore attestation bundle as `.sigstore.json` and `.intoto.jsonl` (OpenSSF
    Scorecard Signed-Releases looks at those release-asset extensions)
@@ -91,6 +93,34 @@ Prefer `gh attestation verify` against the chart (or Cosign against the image).
 The release-side copies exist so [OpenSSF Scorecard Signed-Releases](https://github.com/ossf/scorecard/blob/main/docs/checks.md#signed-releases)
 can see signature/provenance assets; Scorecard does not yet consume the GitHub
 Attestations API.
+
+## Artifact Hub
+
+The OCI Helm chart can be listed on [Artifact Hub](https://artifacthub.io/).
+Each release pushes repository metadata from
+[`artifacthub-repo.yml`](../artifacthub-repo.yml) to:
+
+```text
+ghcr.io/roberteggl/charts/github-deployment-bridge:artifacthub.io
+```
+
+### One-time setup
+
+1. Sign in to Artifact Hub and add a Helm repository with URL
+   `oci://ghcr.io/roberteggl/charts/github-deployment-bridge`
+   (repository ID `8a8ee5d5-8afa-41fc-9a95-5d51e6ccd952` is already set in
+   `artifacthub-repo.yml`).
+2. Push the metadata (next release does this automatically), or manually:
+
+```bash
+oras push \
+  ghcr.io/roberteggl/charts/github-deployment-bridge:artifacthub.io \
+  --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
+  artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml
+```
+
+Ownership claim uses the `owners` entry (`Robert Eggl` /
+`robert@eggl.dev`) and is processed immediately once the metadata is visible.
 
 ```bash
 # Cosign (image signature)
