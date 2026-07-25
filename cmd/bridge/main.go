@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	helmv2 "github.com/fluxcd/helm-controller/api/v2"
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	"github.com/go-chi/chi/v5"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -49,6 +50,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(kustomizev1.AddToScheme(scheme))
+	utilruntime.Must(helmv2.AddToScheme(scheme))
 	utilruntime.Must(appsv1.AddToScheme(scheme))
 }
 
@@ -103,7 +105,7 @@ func run() error {
 		Retry:   retryCfg,
 	})
 
-	reporter := deployment.NewReporter(cfg, store, reg, gh, m, log)
+	reporter := deployment.NewReporter(cfg, store, reg, gh, m, log, version)
 
 	mgrOpts := ctrl.Options{
 		Scheme: scheme,
@@ -127,13 +129,22 @@ func run() error {
 		return fmt.Errorf("create manager: %w", err)
 	}
 
-	if err := (&kubernetes.Reconciler{
+	finder := &kubernetes.WorkloadFinder{Client: mgr.GetClient()}
+	if err := (&kubernetes.KustomizationReconciler{
 		Client:   mgr.GetClient(),
-		Finder:   &kubernetes.WorkloadFinder{Client: mgr.GetClient()},
+		Finder:   finder,
 		Reporter: reporter,
 		Log:      log,
 	}).SetupWithManager(mgr); err != nil {
-		return fmt.Errorf("setup reconciler: %w", err)
+		return fmt.Errorf("setup kustomization reconciler: %w", err)
+	}
+	if err := (&kubernetes.HelmReleaseReconciler{
+		Client:   mgr.GetClient(),
+		Finder:   finder,
+		Reporter: reporter,
+		Log:      log,
+	}).SetupWithManager(mgr); err != nil {
+		return fmt.Errorf("setup helmrelease reconciler: %w", err)
 	}
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

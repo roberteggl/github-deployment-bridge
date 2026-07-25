@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 
+	helmv2 "github.com/fluxcd/helm-controller/api/v2"
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,23 +28,44 @@ var workloadKinds = map[string]schema.GroupVersionKind{
 	"DaemonSet":   {Group: "apps", Version: "v1", Kind: "DaemonSet"},
 }
 
-// WorkloadFinder resolves container images for workloads owned by a Kustomization.
+// WorkloadFinder resolves container images for workloads owned by Flux sources.
 type WorkloadFinder struct {
 	Client client.Client
 }
 
-// ImagesForKustomization returns images for Deployments, StatefulSets, and DaemonSets
-// associated with the Kustomization inventory. ReplicaSets are resolved via owner references.
+// ImagesForKustomization returns images for workloads in the Kustomization inventory.
 func (f *WorkloadFinder) ImagesForKustomization(ctx context.Context, ks *kustomizev1.Kustomization) ([]deployment.WorkloadImage, error) {
 	if ks.Status.Inventory == nil {
 		return nil, nil
 	}
+	ids := make([]string, 0, len(ks.Status.Inventory.Entries))
+	for _, entry := range ks.Status.Inventory.Entries {
+		ids = append(ids, entry.ID)
+	}
+	return f.ImagesFromInventory(ctx, ids)
+}
 
+// ImagesForHelmRelease returns images for workloads in the HelmRelease inventory.
+// Requires Flux helm-controller ≥ 1.5 / Flux ≥ 2.8 (empty inventory → no reports).
+func (f *WorkloadFinder) ImagesForHelmRelease(ctx context.Context, hr *helmv2.HelmRelease) ([]deployment.WorkloadImage, error) {
+	if hr.Status.Inventory == nil {
+		return nil, nil
+	}
+	ids := make([]string, 0, len(hr.Status.Inventory.Entries))
+	for _, entry := range hr.Status.Inventory.Entries {
+		ids = append(ids, entry.ID)
+	}
+	return f.ImagesFromInventory(ctx, ids)
+}
+
+// ImagesFromInventory resolves Deployments, StatefulSets, and DaemonSets from
+// Flux inventory IDs (`<ns>_<name>_<group>_<kind>`). ReplicaSets resolve via owner refs.
+func (f *WorkloadFinder) ImagesFromInventory(ctx context.Context, ids []string) ([]deployment.WorkloadImage, error) {
 	var images []deployment.WorkloadImage
 	seen := make(map[string]struct{})
 
-	for _, entry := range ks.Status.Inventory.Entries {
-		ns, name, group, kind, err := parseInventoryID(entry.ID)
+	for _, id := range ids {
+		ns, name, group, kind, err := parseInventoryID(id)
 		if err != nil {
 			continue
 		}

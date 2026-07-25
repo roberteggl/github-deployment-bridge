@@ -88,14 +88,14 @@ reuse lint
 
 ## What is in / out of scope
 
-**In scope:** observing successful Flux reconciliations and syncing GitHub
-Deployments from OCI labels and optional annotations; reliability, metrics, docs, Helm chart, CI.
+**In scope:** observing Flux `Kustomization` / `HelmRelease` reconciliations and
+syncing the GitHub Deployments lifecycle from OCI labels and optional annotations;
+reliability, metrics, docs, Helm chart, CI.
 
 **Out of scope (unless agreed):** GitOps reconciliation, image automation,
 triggering deployments, or turning the bridge into a general CD orchestrator.
 
-Future ideas (e.g. `failure` / `in_progress` statuses, HelmRelease support)
-are welcome as proposals - open an issue first for larger work.
+Larger design changes are welcome as proposals - open an issue first.
 
 ## Releases
 

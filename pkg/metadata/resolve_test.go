@@ -150,12 +150,12 @@ func TestResolveInvalidHTTPSURL(t *testing.T) {
 func TestValidGitSHA(t *testing.T) {
 	t.Parallel()
 	cases := map[string]bool{
-		"abcdef0":            true,
-		"0123456789abcdef":   true,
-		"ABCDEF0123456789":   true,
-		"abc":                false,
-		"zzzzzzz":            false,
-		"":                   false,
+		"abcdef0":          true,
+		"0123456789abcdef": true,
+		"ABCDEF0123456789": true,
+		"abc":              false,
+		"zzzzzzz":          false,
+		"":                 false,
 		"0123456789abcdef0123456789abcdef01234567":  true,  // 40
 		"0123456789abcdef0123456789abcdef012345678": false, // 41
 	}

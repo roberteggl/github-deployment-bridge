@@ -13,14 +13,14 @@ SPDX-License-Identifier: Apache-2.0
 
 A lightweight Kubernetes controller that bridges **FluxCD** reconciliations to the **GitHub Deployments API**.
 
-When a Flux `Kustomization` becomes Ready, the bridge inspects deployed container images, reads standard OCI labels (with optional Kubernetes annotation overrides), and reports a successful GitHub Deployment for the discovered repository and commit - with zero per-application mapping database.
+When a Flux `Kustomization` or `HelmRelease` reconciles, the bridge inspects deployed container images, reads standard OCI labels (with optional Kubernetes annotation overrides), and reports the full GitHub Deployment lifecycle (`queued` → `in_progress` → `success` / `failure`) for the discovered repository and commit - with zero per-application mapping database.
 
 ## How it works
 
 ```text
-Flux Kustomization Ready=True
+Flux Kustomization / HelmRelease (conditions change)
         ↓
-Discover Deployment / StatefulSet / DaemonSet images + annotations
+Derive phase + discover inventory workloads + annotations
         ↓
 Fetch OCI manifest + config labels (no layer pull)
         ↓
@@ -28,9 +28,9 @@ Resolve metadata (annotation > OCI > default)
         ↓
 Authenticate as GitHub App
         ↓
-Create Deployment + Status(success)
+Create Deployment (once) + Status (lifecycle)
         ↓
-Cache (owner, repo, environment, commit, deployment-name) to prevent duplicates
+Cache (owner, repo, environment, commit, deployment-name) + latest status
 ```
 
 ### OCI labels
@@ -97,7 +97,7 @@ Why a PVC: SQLite at `/data/cache.db` deduplicates
 | `/healthz` | Liveness |
 | `/readyz` | Readiness |
 
-Metrics include `deployment_reports_total`, `deployment_failures_total`, `github_api_requests_total`, `github_api_latency_seconds`, `oci_requests_total`, `cache_hits_total`, and `cache_misses_total`.
+Metrics include `deployments_created_total`, `deployment_status_updates_total`, `deployment_failures_total`, `deployment_errors_total`, `deployment_duplicates_skipped_total`, `deployment_inactive_total`, `github_api_requests_total`, `github_api_failures_total`, `github_api_latency_seconds`, and `oci_requests_total`.
 
 Image: `ghcr.io/roberteggl/github-deployment-bridge:<version>` (multi-arch `amd64`/`arm64`, Cosign-signed, SLSA-attested).
 
@@ -115,7 +115,7 @@ and [docs/releasing.md](docs/releasing.md).
 
 ## Non-goals
 
-This project does **not** reconcile GitOps state, trigger deployments, run CI, or manage image automation. It only observes successful Flux reconciliations and synchronizes deployment state into GitHub.
+This project does **not** reconcile GitOps state, trigger deployments, run CI, or manage image automation. It only observes Flux reconciliations and synchronizes deployment lifecycle state into GitHub.
 
 ## Licensing
 

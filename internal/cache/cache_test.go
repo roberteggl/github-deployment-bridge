@@ -16,7 +16,7 @@ import (
 	"github.com/roberteggl/github-deployment-bridge/internal/cache"
 )
 
-func TestDuplicateDetection(t *testing.T) {
+func TestLifecycleStatusesAndListByIdentity(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -42,8 +42,24 @@ func TestDuplicateDetection(t *testing.T) {
 	if got != nil {
 		t.Fatalf("expected nil entry, got %#v", got)
 	}
-	if cache.AlreadyReported(got) {
-		t.Fatal("empty cache should not be already reported")
+	if cache.LatestStatus(got) != "" {
+		t.Fatal("empty cache should have empty status")
+	}
+
+	if err := store.Put(ctx, cache.Entry{
+		Key:          key,
+		DeploymentID: 42,
+		Status:       cache.StatusQueued,
+		ReportedAt:   time.Now().UTC(),
+	}); err != nil {
+		t.Fatalf("put queued: %v", err)
+	}
+	got, err = store.Get(ctx, key)
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	if cache.LatestStatus(got) != cache.StatusQueued || got.DeploymentID != 42 {
+		t.Fatalf("entry = %#v", got)
 	}
 
 	if err := store.Put(ctx, cache.Entry{
@@ -52,26 +68,39 @@ func TestDuplicateDetection(t *testing.T) {
 		Status:       cache.StatusSuccess,
 		ReportedAt:   time.Now().UTC(),
 	}); err != nil {
-		t.Fatalf("put: %v", err)
+		t.Fatalf("put success: %v", err)
 	}
 
-	got, err = store.Get(ctx, key)
+	other := key
+	other.CommitSHA = "def456"
+	if err := store.Put(ctx, cache.Entry{
+		Key:          other,
+		DeploymentID: 43,
+		Status:       cache.StatusSuccess,
+		ReportedAt:   time.Now().UTC(),
+	}); err != nil {
+		t.Fatalf("put other: %v", err)
+	}
+
+	list, err := store.ListByIdentity(ctx, cache.Identity{
+		Owner:          "acme",
+		Repo:           "api",
+		Environment:    "production",
+		DeploymentName: "api",
+	})
 	if err != nil {
-		t.Fatalf("get: %v", err)
+		t.Fatalf("list: %v", err)
 	}
-	if !cache.AlreadyReported(got) {
-		t.Fatal("expected already reported")
-	}
-	if got.DeploymentID != 42 {
-		t.Fatalf("deployment id = %d, want 42", got.DeploymentID)
+	if len(list) != 2 {
+		t.Fatalf("list len = %d, want 2", len(list))
 	}
 
 	// Distinct deployment-name is an independent cache entry.
-	other := key
-	other.DeploymentName = "worker"
-	got, err = store.Get(ctx, other)
+	worker := key
+	worker.DeploymentName = "worker"
+	got, err = store.Get(ctx, worker)
 	if err != nil {
-		t.Fatalf("get other: %v", err)
+		t.Fatalf("get worker: %v", err)
 	}
 	if got != nil {
 		t.Fatalf("expected nil for different deployment-name, got %#v", got)
@@ -120,7 +149,7 @@ INSERT INTO deployments VALUES ('acme','api','production','abc123',7,'success','
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}
-	if !cache.AlreadyReported(got) || got.DeploymentID != 7 {
+	if cache.LatestStatus(got) != cache.StatusSuccess || got.DeploymentID != 7 {
 		t.Fatalf("migrated entry = %#v", got)
 	}
 }

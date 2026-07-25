@@ -16,7 +16,7 @@ instead (see [install.md](install.md)).
 |---|---|---|---|
 | `CLUSTER_NAME` | yes | | Logical cluster name used in logs |
 | `ENVIRONMENT` | yes | | Default GitHub deployment environment (overridable per workload) |
-| `WATCH_NAMESPACE` | no | _(all)_ | Limit Flux Kustomization watch to one namespace |
+| `WATCH_NAMESPACE` | no | _(all)_ | Limit Flux Kustomization / HelmRelease watch to one namespace |
 | `DATABASE` | no | `/data/cache.db` | SQLite path for duplicate prevention |
 | `ENVIRONMENT_URL` | no | | Default HTTPS URL on deployment statuses (overridable) |
 | `LOG_URL_TEMPLATE` | no | | Default log URL; `{sha}` is replaced with the commit (overridable) |
@@ -88,9 +88,10 @@ kubectl -n flux-system create secret generic github-deployment-bridge \
 ## Persistence (PVC)
 
 The SQLite cache at `DATABASE` (`/data/cache.db` in the chart) stores
-`(owner, repo, environment, commitSHA, deploymentName)` so the same commit is not
-reported twice when Flux re-reconciles (and so monorepo workloads with distinct
-`deployment-name` annotations stay independent).
+`(owner, repo, environment, commitSHA, deploymentName)`, the GitHub
+`deployment_id`, and the latest status so reconciles are idempotent across
+restarts (and so monorepo workloads with distinct `deployment-name` annotations
+stay independent).
 
 | Helm value | Default | Description |
 |---|---|---|
@@ -109,7 +110,7 @@ Repository permissions required:
 
 | Permission | Access | Why |
 |---|---|---|
-| **Deployments** | Read & Write | Create Deployments and status updates |
+| **Deployments** | Read & Write | Create Deployments and lifecycle status updates |
 | **Contents** | Read | Resolve the commit SHA / ref for a Deployment |
 | **Metadata** | Read | Baseline App access to repository metadata |
 
@@ -140,3 +141,18 @@ For GHCR, the credentials need `read:packages` (PAT, fine-grained token, or
 equivalent). The GitHub App used for Deployments is not used for registry auth.
 
 Only the image manifest and config blob are fetched - layers are never pulled.
+
+## Metrics
+
+| Metric | Meaning |
+|---|---|
+| `deployments_created_total` | GitHub Deployments created |
+| `deployment_status_updates_total` | Deployment status POSTs that succeeded |
+| `deployment_failures_total` | Status `failure` emitted (Flux/app failure) |
+| `deployment_errors_total` | Status `error` emitted (bridge-only fault) |
+| `deployment_duplicates_skipped_total` | Idempotent skips |
+| `deployment_inactive_total` | Status `inactive` emitted |
+| `github_api_requests_total` | GitHub API calls by `operation` and `result` |
+| `github_api_failures_total` | Failed GitHub API calls |
+| `github_api_latency_seconds` | GitHub API latency histogram |
+| `oci_requests_total` | Registry inspect results |

@@ -88,6 +88,9 @@ func (c *Client) Inspect(ctx context.Context, image string) (ocilabels.Metadata,
 		}
 
 		meta = ocilabels.Extract(cfg.Config.Labels)
+		if d := desc.Digest; d.String() != "" {
+			meta.Digest = d.String()
+		}
 		c.inc("success")
 		return nil
 	})

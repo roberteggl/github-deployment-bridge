@@ -92,6 +92,11 @@ func TestAppClientCreateDeploymentAndStatus(t *testing.T) {
 		Environment:           "production",
 		ProductionEnvironment: true,
 		Description:           "Deployed by FluxCD",
+		Payload: map[string]any{
+			"cluster":        "prod",
+			"kustomization":  "backend",
+			"deploymentName": "backend",
+		},
 	})
 	if err != nil {
 		t.Fatalf("CreateDeployment: %v", err)
@@ -113,18 +118,26 @@ func TestAppClientCreateDeploymentAndStatus(t *testing.T) {
 	if gotDeployment["production_environment"] != true {
 		t.Fatalf("production_environment = %#v", gotDeployment["production_environment"])
 	}
+	payload, ok := gotDeployment["payload"].(map[string]any)
+	if !ok || payload["cluster"] != "prod" {
+		t.Fatalf("payload = %#v", gotDeployment["payload"])
+	}
 
 	if err := client.CreateDeploymentStatus(ctx, ghclient.DeploymentStatusRequest{
 		Owner:        "example",
 		Repo:         "backend",
 		DeploymentID: dep.ID,
 		State:        "success",
-		Description:  "Flux reconciliation succeeded",
+		Description:  "Deployment completed successfully.",
+		AutoInactive: true,
 	}); err != nil {
 		t.Fatalf("CreateDeploymentStatus: %v", err)
 	}
 	if gotStatus["state"] != "success" {
 		t.Fatalf("status state = %#v", gotStatus["state"])
+	}
+	if gotStatus["auto_inactive"] != true {
+		t.Fatalf("auto_inactive = %#v", gotStatus["auto_inactive"])
 	}
 }
 

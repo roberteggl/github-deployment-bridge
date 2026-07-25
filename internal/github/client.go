@@ -30,6 +30,8 @@ type DeploymentRequest struct {
 	// Task is the GitHub Deployment task (defaults to "deploy" when empty).
 	// Used when github-deployment-bridge.io/deployment-name is set.
 	Task string
+	// Payload is optional JSON metadata attached to the deployment.
+	Payload map[string]any
 }
 
 // DeploymentStatusRequest describes a deployment status to create.
@@ -41,6 +43,8 @@ type DeploymentStatusRequest struct {
 	EnvironmentURL string
 	LogURL         string
 	Description    string
+	// AutoInactive marks previous successful deployments in the same environment inactive.
+	AutoInactive bool
 }
 
 // DeploymentResult is returned after creating a deployment.
@@ -133,6 +137,9 @@ func (c *AppClient) CreateDeployment(ctx context.Context, req DeploymentRequest)
 		if req.Task != "" {
 			ghReq.Task = github.Ptr(req.Task)
 		}
+		if len(req.Payload) > 0 {
+			ghReq.Payload = req.Payload
+		}
 
 		dep, resp, err := c.client.Repositories.CreateDeployment(ctx, req.Owner, req.Repo, ghReq)
 		c.observe("create_deployment", start, err, resp)
@@ -157,11 +164,12 @@ func (c *AppClient) CreateDeploymentStatus(ctx context.Context, req DeploymentSt
 		start := time.Now()
 		desc := req.Description
 		if desc == "" {
-			desc = "Flux reconciliation succeeded"
+			desc = "Flux reconciliation update"
 		}
 		ghReq := github.DeploymentStatusRequest{
-			State:       req.State,
-			Description: github.Ptr(desc),
+			State:        req.State,
+			Description:  github.Ptr(desc),
+			AutoInactive: github.Ptr(req.AutoInactive),
 		}
 		if req.EnvironmentURL != "" {
 			ghReq.EnvironmentURL = github.Ptr(req.EnvironmentURL)
@@ -190,6 +198,7 @@ func (c *AppClient) observe(operation string, start time.Time, err error, resp *
 		if resp != nil && resp.StatusCode >= 400 && resp.StatusCode < 500 && resp.StatusCode != 429 {
 			result = "client_error"
 		}
+		c.metrics.GitHubAPIFailuresTotal.Inc()
 	}
 	c.metrics.GitHubAPIRequestsTotal.WithLabelValues(operation, result).Inc()
 }

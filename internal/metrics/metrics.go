@@ -12,13 +12,16 @@ import (
 
 // Metrics holds Prometheus collectors.
 type Metrics struct {
-	DeploymentReportsTotal  prometheus.Counter
-	DeploymentFailuresTotal prometheus.Counter
-	GitHubAPIRequestsTotal  *prometheus.CounterVec
-	GitHubAPILatencySeconds *prometheus.HistogramVec
-	OCIRequestsTotal        *prometheus.CounterVec
-	CacheHitsTotal          prometheus.Counter
-	CacheMissesTotal        prometheus.Counter
+	DeploymentsCreatedTotal          prometheus.Counter
+	DeploymentStatusUpdatesTotal     prometheus.Counter
+	DeploymentFailuresTotal          prometheus.Counter
+	DeploymentErrorsTotal            prometheus.Counter
+	DeploymentDuplicatesSkippedTotal prometheus.Counter
+	DeploymentInactiveTotal          prometheus.Counter
+	GitHubAPIRequestsTotal           *prometheus.CounterVec
+	GitHubAPIFailuresTotal           prometheus.Counter
+	GitHubAPILatencySeconds          *prometheus.HistogramVec
+	OCIRequestsTotal                 *prometheus.CounterVec
 }
 
 // New registers metrics with the given registerer (or the default if nil).
@@ -29,18 +32,38 @@ func New(reg prometheus.Registerer) *Metrics {
 	factory := promauto.With(reg)
 
 	return &Metrics{
-		DeploymentReportsTotal: factory.NewCounter(prometheus.CounterOpts{
-			Name: "deployment_reports_total",
-			Help: "Total number of successful GitHub deployment reports.",
+		DeploymentsCreatedTotal: factory.NewCounter(prometheus.CounterOpts{
+			Name: "deployments_created_total",
+			Help: "Total number of GitHub Deployments created.",
+		}),
+		DeploymentStatusUpdatesTotal: factory.NewCounter(prometheus.CounterOpts{
+			Name: "deployment_status_updates_total",
+			Help: "Total number of GitHub Deployment status updates sent.",
 		}),
 		DeploymentFailuresTotal: factory.NewCounter(prometheus.CounterOpts{
 			Name: "deployment_failures_total",
-			Help: "Total number of failed GitHub deployment reports.",
+			Help: "Total number of GitHub Deployment failure statuses emitted.",
+		}),
+		DeploymentErrorsTotal: factory.NewCounter(prometheus.CounterOpts{
+			Name: "deployment_errors_total",
+			Help: "Total number of GitHub Deployment error statuses emitted.",
+		}),
+		DeploymentDuplicatesSkippedTotal: factory.NewCounter(prometheus.CounterOpts{
+			Name: "deployment_duplicates_skipped_total",
+			Help: "Total number of duplicate deployment status updates skipped.",
+		}),
+		DeploymentInactiveTotal: factory.NewCounter(prometheus.CounterOpts{
+			Name: "deployment_inactive_total",
+			Help: "Total number of GitHub Deployment inactive statuses emitted.",
 		}),
 		GitHubAPIRequestsTotal: factory.NewCounterVec(prometheus.CounterOpts{
 			Name: "github_api_requests_total",
 			Help: "Total number of GitHub API requests by operation and result.",
 		}, []string{"operation", "result"}),
+		GitHubAPIFailuresTotal: factory.NewCounter(prometheus.CounterOpts{
+			Name: "github_api_failures_total",
+			Help: "Total number of failed GitHub API requests.",
+		}),
 		GitHubAPILatencySeconds: factory.NewHistogramVec(prometheus.HistogramOpts{
 			Name:    "github_api_latency_seconds",
 			Help:    "Latency of GitHub API requests in seconds.",
@@ -50,13 +73,5 @@ func New(reg prometheus.Registerer) *Metrics {
 			Name: "oci_requests_total",
 			Help: "Total number of OCI registry requests by result.",
 		}, []string{"result"}),
-		CacheHitsTotal: factory.NewCounter(prometheus.CounterOpts{
-			Name: "cache_hits_total",
-			Help: "Total number of duplicate-prevention cache hits.",
-		}),
-		CacheMissesTotal: factory.NewCounter(prometheus.CounterOpts{
-			Name: "cache_misses_total",
-			Help: "Total number of duplicate-prevention cache misses.",
-		}),
 	}
 }

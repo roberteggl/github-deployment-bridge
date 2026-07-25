@@ -21,12 +21,14 @@ const (
 //
 // Optional:
 //   - Version, Title, Created — used for logging and diagnostics.
+//   - Digest — image manifest digest when known from registry inspect.
 type Metadata struct {
 	Source   string
 	Revision string
 	Version  string
 	Title    string
 	Created  string
+	Digest   string
 }
 
 // Extract reads known OCI labels from an image config label map.

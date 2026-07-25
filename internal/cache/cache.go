@@ -15,9 +15,14 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// Status values stored for reported deployments.
+// Status values stored for reported deployments (GitHub Deployment states).
 const (
-	StatusSuccess = "success"
+	StatusQueued     = "queued"
+	StatusInProgress = "in_progress"
+	StatusSuccess    = "success"
+	StatusFailure    = "failure"
+	StatusError      = "error"
+	StatusInactive   = "inactive"
 )
 
 // Key uniquely identifies a reported deployment.
@@ -26,6 +31,14 @@ type Key struct {
 	Repo           string
 	Environment    string
 	CommitSHA      string
+	DeploymentName string
+}
+
+// Identity uniquely identifies a deployment lineage across commits.
+type Identity struct {
+	Owner          string
+	Repo           string
+	Environment    string
 	DeploymentName string
 }
 
@@ -41,6 +54,7 @@ type Entry struct {
 type Store interface {
 	Get(ctx context.Context, key Key) (*Entry, error)
 	Put(ctx context.Context, entry Entry) error
+	ListByIdentity(ctx context.Context, id Identity) ([]Entry, error)
 	Close() error
 }
 
@@ -159,27 +173,14 @@ FROM deployments
 WHERE owner = ? AND repo = ? AND environment = ? AND commit_sha = ? AND deployment_name = ?
 `
 	row := s.db.QueryRowContext(ctx, q, key.Owner, key.Repo, key.Environment, key.CommitSHA, key.DeploymentName)
-	var e Entry
-	var reportedAt string
-	err := row.Scan(
-		&e.Key.Owner, &e.Key.Repo, &e.Key.Environment, &e.Key.CommitSHA, &e.Key.DeploymentName,
-		&e.DeploymentID, &e.Status, &reportedAt,
-	)
+	e, err := scanEntry(row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("cache get: %w", err)
 	}
-	t, err := time.Parse(time.RFC3339Nano, reportedAt)
-	if err != nil {
-		t, err = time.Parse(time.RFC3339, reportedAt)
-		if err != nil {
-			return nil, fmt.Errorf("parse reported_at: %w", err)
-		}
-	}
-	e.ReportedAt = t
-	return &e, nil
+	return e, nil
 }
 
 // Put upserts a deployment report.
@@ -205,12 +206,68 @@ ON CONFLICT(owner, repo, environment, commit_sha, deployment_name) DO UPDATE SET
 	return nil
 }
 
+// ListByIdentity returns all cached entries for a deployment identity (any commit).
+func (s *SQLiteStore) ListByIdentity(ctx context.Context, id Identity) ([]Entry, error) {
+	const q = `
+SELECT owner, repo, environment, commit_sha, deployment_name, deployment_id, status, reported_at
+FROM deployments
+WHERE owner = ? AND repo = ? AND environment = ? AND deployment_name = ?
+ORDER BY reported_at ASC
+`
+	rows, err := s.db.QueryContext(ctx, q, id.Owner, id.Repo, id.Environment, id.DeploymentName)
+	if err != nil {
+		return nil, fmt.Errorf("cache list by identity: %w", err)
+	}
+	defer rows.Close()
+
+	var out []Entry
+	for rows.Next() {
+		e, err := scanEntry(rows)
+		if err != nil {
+			return nil, fmt.Errorf("cache list scan: %w", err)
+		}
+		out = append(out, *e)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("cache list rows: %w", err)
+	}
+	return out, nil
+}
+
 // Close closes the underlying database.
 func (s *SQLiteStore) Close() error {
 	return s.db.Close()
 }
 
-// AlreadyReported returns true when a successful report exists for key.
-func AlreadyReported(entry *Entry) bool {
-	return entry != nil && entry.Status == StatusSuccess
+type scannable interface {
+	Scan(dest ...any) error
+}
+
+func scanEntry(row scannable) (*Entry, error) {
+	var e Entry
+	var reportedAt string
+	err := row.Scan(
+		&e.Key.Owner, &e.Key.Repo, &e.Key.Environment, &e.Key.CommitSHA, &e.Key.DeploymentName,
+		&e.DeploymentID, &e.Status, &reportedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	t, err := time.Parse(time.RFC3339Nano, reportedAt)
+	if err != nil {
+		t, err = time.Parse(time.RFC3339, reportedAt)
+		if err != nil {
+			return nil, fmt.Errorf("parse reported_at: %w", err)
+		}
+	}
+	e.ReportedAt = t
+	return &e, nil
+}
+
+// LatestStatus returns the cached status string, or empty when missing.
+func LatestStatus(entry *Entry) string {
+	if entry == nil {
+		return ""
+	}
+	return entry.Status
 }

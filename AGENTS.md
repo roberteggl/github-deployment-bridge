@@ -11,20 +11,22 @@ SPDX-License-Identifier: Apache-2.0
 **github-deployment-bridge** is a lightweight Go Kubernetes controller that
 bridges FluxCD reconciliations to the GitHub Deployments API.
 
-When a Flux `Kustomization` becomes Ready, the bridge:
+When a Flux `Kustomization` or `HelmRelease` reconciles, the bridge:
 
-1. Discovers workload images (`Deployment`, `StatefulSet`, `DaemonSet`)
-2. Reads OCI labels (`source`, `revision`, optional `version`/`title`/`created`) - no layer pulls
-3. Merges optional `github-deployment-bridge.io/*` annotations (annotation > OCI > default)
-4. Authenticates as a GitHub App (never a PAT)
-5. Creates a GitHub Deployment + `success` status
-6. Deduplicates via SQLite on `(owner, repo, environment, commitSHA, deploymentName)`
+1. Derives a deployment phase (`queued` / `in_progress` / `success` / `failure`)
+2. Discovers workload images from `.status.inventory` (`Deployment`, `StatefulSet`, `DaemonSet`)
+3. Reads OCI labels (`source`, `revision`, optional `version`/`title`/`created`) - no layer pulls
+4. Merges optional `github-deployment-bridge.io/*` annotations (annotation > OCI > default)
+5. Authenticates as a GitHub App (never a PAT)
+6. Creates a GitHub Deployment once and updates Deployment Status through the lifecycle
+7. Deduplicates via SQLite on `(owner, repo, environment, commitSHA, deploymentName)` + latest status
+8. Marks prior successful deployments `inactive` when a newer commit succeeds
 
 Stack: Go 1.25+, chi, slog, controller-runtime, go-github, go-containerregistry,
 modernc SQLite, Prometheus, distroless image, Helm chart.
 
 Non-goals: GitOps reconciliation, image automation, CI triggering, or deployment
-orchestration. Observe successful Flux reconciliations only.
+orchestration. Observe Flux reconciliations and report GitHub Deployment state only.
 
 ## Documentation
 
@@ -35,7 +37,7 @@ Read these before making non-trivial changes:
 | [README.md](README.md) | Overview, quick start |
 | [docs/install.md](docs/install.md) | Cluster install, GitHub App, secrets, PVC |
 | [docs/configuration.md](docs/configuration.md) | Env vars, Helm values, permissions, registries |
-| [docs/architecture.md](docs/architecture.md) | Event flow, workload discovery, metadata (OCI + annotations) |
+| [docs/architecture.md](docs/architecture.md) | Event flow, lifecycle, workload discovery, metadata (OCI + annotations) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | DCO, Conventional Commits, PR process |
 | [docs/development.md](docs/development.md) | Build, test, local run, integration tests |
 | [docs/releasing.md](docs/releasing.md) | Tag-driven release pipeline (git-cliff, GHCR, Helm) |

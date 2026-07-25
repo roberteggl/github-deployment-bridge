@@ -12,7 +12,7 @@ alongside FluxCD, including GitHub App setup, secrets, and persistence.
 ## Prerequisites
 
 - A Kubernetes cluster with [FluxCD](https://fluxcd.io/) installed
-  (`Kustomization` CRDs available)
+  (`Kustomization` CRDs; `HelmRelease` CRDs if you want Helm reporting)
 - Helm 3
 - A GitHub App (see [GitHub App setup](#github-app-setup)) installed on the
   repositories you deploy
@@ -21,8 +21,11 @@ alongside FluxCD, including GitHub App setup, secrets, and persistence.
   [architecture](architecture.md#metadata-resolution))
 
 The bridge is an observer only. It does not reconcile GitOps state or mutate
-workloads. Install it in a namespace that can watch Flux `Kustomization`
-resources (commonly `flux-system`).
+workloads. Install it in a namespace that can watch Flux `Kustomization` and
+`HelmRelease` resources (commonly `flux-system`).
+
+HelmRelease inventory (required for image discovery) needs Flux ≥ 2.8 /
+helm-controller ≥ 1.5; older clusters simply skip HelmReleases with empty inventory.
 
 ## GitHub App setup
 
@@ -48,7 +51,7 @@ Grant **only** these repository permissions:
 
 | Permission | Access | Why |
 |---|---|---|
-| **Deployments** | Read & Write | Create Deployments and `success` statuses |
+| **Deployments** | Read & Write | Create Deployments and lifecycle statuses |
 | **Contents** | Read | Resolve the commit SHA / ref when creating a Deployment |
 | **Metadata** | Read | Required baseline for GitHub Apps (repo identity) |
 
@@ -202,7 +205,7 @@ helm upgrade --install github-deployment-bridge \
 | Resource | Purpose |
 |---|---|
 | `Deployment` | Controller pod |
-| `ServiceAccount` + `ClusterRole` / `ClusterRoleBinding` | Watch Flux Kustomizations and workloads |
+| `ServiceAccount` + `ClusterRole` / `ClusterRoleBinding` | Watch Flux Kustomizations, HelmReleases, and workloads |
 | `Secret` | GitHub App credentials (unless `existingSecret`) |
 | `PersistentVolumeClaim` | SQLite duplicate-prevention cache |
 | `Service` | Metrics (`:8080`) and probes (`:8081`) |
@@ -210,6 +213,7 @@ helm upgrade --install github-deployment-bridge \
 Cluster RBAC (read-only for workloads):
 
 - `kustomize.toolkit.fluxcd.io/kustomizations`: get, list, watch
+- `helm.toolkit.fluxcd.io/helmreleases`: get, list, watch
 - `apps` Deployments / StatefulSets / DaemonSets / ReplicaSets: get, list, watch
 - `coordination.k8s.io/leases`: leader election
 - `events`: create, patch
@@ -241,13 +245,13 @@ kubectl -n flux-system logs -l app.kubernetes.io/name=github-deployment-bridge -
 
 # Metrics
 kubectl -n flux-system port-forward svc/github-deployment-bridge 8080:8080
-curl -s localhost:8080/metrics | grep deployment_reports
+curl -s localhost:8080/metrics | grep deployments_created
 ```
 
-After Flux reconciles a Ready `Kustomization` whose images have resolvable
-metadata (OCI labels and/or annotations), you
-should see a new GitHub Deployment (and `success` status) for that commit under
-**Environments** in the repository.
+After Flux reconciles a `Kustomization` or `HelmRelease` whose inventory images
+have resolvable metadata (OCI labels and/or annotations), you should see a
+GitHub Deployment with lifecycle statuses for that commit under **Environments**
+in the repository.
 
 ## Private image registries
 

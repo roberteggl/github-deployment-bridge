@@ -49,6 +49,7 @@
       "matchUpdateTypes": ["major"],
       "matchPackageNames": [
         "github.com/fluxcd/kustomize-controller/api",
+        "github.com/fluxcd/helm-controller/api",
         "github.com/fluxcd/pkg/**"
       ],
       "groupName": "flux libraries (major)"
@@ -64,6 +65,7 @@
         "!k8s.io/apiextensions-apiserver",
         "!sigs.k8s.io/controller-runtime",
         "!github.com/fluxcd/kustomize-controller/api",
+        "!github.com/fluxcd/helm-controller/api",
         "!github.com/fluxcd/pkg/**"
       ],
       "groupName": "go modules (major)"

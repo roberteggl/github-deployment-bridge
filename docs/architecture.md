@@ -15,13 +15,13 @@ Push GHCR image (with OCI labels)
     ↓
 Flux Image Automation
     ↓
-Flux reconciles Kustomization
-    ↓
-Deployment succeeds (Ready=True)
+Flux reconciles Kustomization / HelmRelease
     ↓
 Flux GitHub Deployment Bridge
         ↓
-Read deployed image(s) + workload annotations
+Derive phase (queued / in_progress / success / failure)
+        ↓
+Read inventory workloads + annotations (skip if empty)
         ↓
 Fetch OCI manifest + config (no layers)
         ↓
@@ -29,9 +29,13 @@ Resolve metadata (annotation > OCI > default)
         ↓
 Authenticate as GitHub App
         ↓
-Create GitHub Deployment
+Create GitHub Deployment (once) + payload
         ↓
-Create Deployment Status (success)
+Create Deployment Status (lifecycle)
+        ↓
+Cache deployment_id + latest status (idempotent)
+        ↓
+On success: mark prior success inactive
 ```
 
 ## Design principles
@@ -40,14 +44,39 @@ Create Deployment Status (success)
 - **Kubernetes annotations are optional overrides** - deployment-specific environment, URLs, and opt-outs.
 - **Zero per-app mapping database** - no repository-specific configuration beyond annotations on the workload.
 - **Observe only** - the bridge never triggers deployments or mutates cluster workloads.
+- **Full GitHub Deployments lifecycle** - one Deployment per `(owner, repo, environment, commit, deploymentName)` with status updates as Flux progresses.
 - **Safe reconcile loop** - missing/invalid metadata skips a workload with a warning; transient GitHub/OCI errors retry with backoff.
 
-## Readiness filter
+## Flux sources
 
-The controller reacts only when a Flux `Kustomization` satisfies:
+The bridge watches:
 
-- `status.conditions[type=Ready].status == True`
-- `metadata.generation == status.observedGeneration`
+| Kind | API | Inventory |
+|---|---|---|
+| `Kustomization` | `kustomize.toolkit.fluxcd.io/v1` | `.status.inventory` |
+| `HelmRelease` | `helm.toolkit.fluxcd.io/v2` | `.status.inventory` (Flux ≥ 2.8 / helm-controller ≥ 1.5) |
+
+Events fire when conditions, `observedGeneration`, or revision fields change. Reporting runs only when inventory yields at least one resolvable workload image.
+
+## Phase derivation
+
+| Desired phase | Flux signal |
+|---|---|
+| `success` | `Ready=True` and `generation == observedGeneration` |
+| `failure` | `Ready=False` (observed) or `Stalled=True`, or known failure reasons (`HealthCheckFailed`, `InstallFailed`, …) |
+| `in_progress` | `Reconciling=True`, or Ready not True while not yet a failure |
+
+The reporter maps desired phases onto GitHub statuses with an idempotent state machine:
+
+```text
+queued → in_progress → success → inactive
+                     ↘ failure
+queued / in_progress → error   (bridge-only faults after a deployment exists)
+```
+
+- **Catch-up:** if the cache is empty and Flux is already terminal, emit only that terminal status (no synthetic history).
+- **Early states:** `queued` then `in_progress` when first observing an in-progress reconcile for a new commit.
+- Never transition `success` → `in_progress`. Never send duplicate identical statuses.
 
 ## Workload discovery
 
@@ -55,6 +84,8 @@ The controller reacts only when a Flux `Kustomization` satisfies:
 2. Resolve `ReplicaSet` entries via owner references to their controlling `Deployment`.
 3. Ignore `Job` / `CronJob`.
 4. Collect `github-deployment-bridge.io/*` annotations from the workload (and pod template as fallback).
+
+Empty inventory (including HelmRelease on Flux before 2.8) → skip.
 
 ## Metadata resolution
 
@@ -70,7 +101,7 @@ Priority for every field:
 |---|---|---|
 | `org.opencontainers.image.source` | yes\* | GitHub owner/repository |
 | `org.opencontainers.image.revision` | yes\* | Git commit SHA (Deployment ref) |
-| `org.opencontainers.image.version` | no | Logging / metrics |
+| `org.opencontainers.image.version` | no | Logging / payload |
 | `org.opencontainers.image.title` | no | Logging |
 | `org.opencontainers.image.created` | no | Diagnostics |
 
@@ -118,4 +149,8 @@ Missing or invalid required metadata → skip reporting and emit a warning. Neve
 | Environment URL | Status `environment_url` |
 | Log URL | Status `log_url` |
 
-Deduplication cache key: `(owner, repo, environment, commitSHA, deploymentName)`.
+Deployment `payload` includes `cluster`, `namespace`, source name (`kustomization` / `helmRelease`), `deploymentName`, `image`, optional `digest` / `version`, and `controllerVersion`.
+
+Status updates set `auto_inactive=true`. When a newer commit reaches `success` for the same identity, prior cached `success` deployments are explicitly marked `inactive`.
+
+Deduplication cache key: `(owner, repo, environment, commitSHA, deploymentName)`. The cache stores `deployment_id` immediately after create (before status) so controller restarts never duplicate Deployments.
