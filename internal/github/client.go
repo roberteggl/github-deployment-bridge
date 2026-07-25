@@ -321,7 +321,7 @@ func githubRetryAfter(err error, resp *github.Response) (time.Duration, bool) {
 	if d, ok := parseRetryAfterHeader(resp.Header.Get("Retry-After")); ok {
 		return d, true
 	}
-	if !resp.Rate.Reset.Time.IsZero() {
+	if !resp.Rate.Reset.IsZero() {
 		if d := time.Until(resp.Rate.Reset.Time); d > 0 {
 			return d, true
 		}
