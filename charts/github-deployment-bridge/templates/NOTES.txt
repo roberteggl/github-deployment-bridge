@@ -7,11 +7,16 @@ Environment: {{ .Values.config.environment }}
 WARNING: persistence.enabled is false — /data uses emptyDir.
   The SQLite deduplication cache is lost on every pod reschedule; duplicate
   GitHub Deployments may be created. Keep persistence.enabled=true in production.
-{{- else if and (gt (int .Values.replicaCount) 1) (eq (.Values.persistence.accessMode | default "ReadWriteOnce") "ReadWriteMany") }}
+{{- else }}
+
+Persistence: /data is backed by a PVC. Deployment strategy is Recreate so
+  upgrades do not leave a new pod Pending while the volume is on the old pod.
+{{- if and (gt (int .Values.replicaCount) 1) (eq (.Values.persistence.accessMode | default "ReadWriteOnce") "ReadWriteMany") }}
 
 WARNING: replicaCount={{ .Values.replicaCount }} with a shared PVC.
   SQLite does not support safe multi-writer semantics — use replicaCount: 1
   even with ReadWriteMany storage, or duplicate GitHub Deployments may occur.
+{{- end }}
 {{- end }}
 
 Ensure your container images include OCI labels:
