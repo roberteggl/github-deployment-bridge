@@ -13,6 +13,7 @@ require (
 	github.com/go-chi/chi/v5 v5.3.1
 	github.com/google/go-containerregistry v0.21.7
 	github.com/google/go-github/v75 v75.0.0
+	github.com/google/go-github/v89 v89.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.24.1
 	k8s.io/api v0.36.3
