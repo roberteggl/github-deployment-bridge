@@ -22,7 +22,7 @@ Releases are fully automated on `v*` tag push via
    - Sigstore keyless Cosign signature
    - GitHub Artifact Attestation (SLSA provenance, pushed to GHCR)
 4. **Helm** - package chart, attest `.tgz` + OCI chart, push to `oci://ghcr.io/<owner>/charts`,
-   and push [`artifacthub-repo.yml`](../artifacthub-repo.yml) as the
+   and push [`artifacthub-repo.yml`](https://github.com/roberteggl/github-deployment-bridge/blob/main/artifacthub-repo.yml) as the
    `artifacthub.io` OCI tag (Artifact Hub ownership / verified publisher)
 5. **GitHub Release** - cliff notes + verify commands; attaches chart `.tgz` plus the
    Sigstore attestation bundle as `.sigstore.json` and `.intoto.jsonl` (OpenSSF
@@ -98,7 +98,7 @@ Attestations API.
 
 The OCI Helm chart can be listed on [Artifact Hub](https://artifacthub.io/).
 Each release pushes repository metadata from
-[`artifacthub-repo.yml`](../artifacthub-repo.yml) to:
+[`artifacthub-repo.yml`](https://github.com/roberteggl/github-deployment-bridge/blob/main/artifacthub-repo.yml) to:
 
 ```text
 ghcr.io/roberteggl/charts/github-deployment-bridge:artifacthub.io
