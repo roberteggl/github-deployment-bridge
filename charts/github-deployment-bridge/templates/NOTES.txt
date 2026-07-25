@@ -7,6 +7,15 @@ Ensure your container images include OCI labels:
   org.opencontainers.image.source
   org.opencontainers.image.revision
   org.opencontainers.image.version
+{{- if .Values.registry.existingDockerConfigSecret }}
+
+Private registry auth: Secret {{ .Values.registry.existingDockerConfigSecret | quote }}
+  mounted at DOCKER_CONFIG=/var/run/secrets/docker
+{{- else }}
+
+Private registries (e.g. GHCR): set registry.existingDockerConfigSecret
+  to your existing dockerconfigjson Secret (often the same one Flux uses).
+{{- end }}
 
 Metrics: http://{{ include "github-deployment-bridge.fullname" . }}:{{ .Values.service.metricsPort }}/metrics
 Health:  http://{{ include "github-deployment-bridge.fullname" . }}:{{ .Values.service.metricsPort }}/healthz
