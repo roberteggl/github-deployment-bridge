@@ -57,10 +57,10 @@ type Reporter struct {
 	log               *slog.Logger
 	controllerVersion string
 
-	warnMu     sync.Mutex
-	warnAt     map[string]time.Time // permanent warn dedupe: key → last warn time
-	now        func() time.Time     // injectable clock for tests; nil → time.Now
-	warnTTL    time.Duration        // zero → permanentWarnTTL
+	warnMu  sync.Mutex
+	warnAt  map[string]time.Time // permanent warn dedupe: key → last warn time
+	now     func() time.Time     // injectable clock for tests; nil → time.Now
+	warnTTL time.Duration        // zero → permanentWarnTTL
 }
 
 // NewReporter constructs a Reporter.
