@@ -33,6 +33,7 @@ flowchart TD
 - **Observe only** - the bridge never triggers deployments or mutates cluster workloads.
 - **Full GitHub Deployments lifecycle** - one Deployment per `(owner, repo, environment, commit, deploymentName)` with status updates as Flux progresses.
 - **Safe reconcile loop** - missing/invalid metadata skips a workload with a warning; transient GitHub/OCI errors retry with backoff.
+- **Single-writer cache** - SQLite on a PVC is the intentional HA model: one replica, Recreate upgrades, node loss means reschedule downtime (not active-active). Multi-writer would require a different store.
 
 ## Flux sources
 

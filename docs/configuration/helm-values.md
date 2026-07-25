@@ -18,6 +18,10 @@ SPDX-License-Identifier: Apache-2.0
 | `config.githubBaseURL` | `GITHUB_BASE_URL` |
 | _(fixed by chart)_ | `DATABASE=/data/cache.db` |
 | `github.existingSecret` / chart Secret | `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, key file |
+| `rbac.create` | _(chart only)_ — emit RBAC |
+| `networkPolicy.enabled` | _(chart only)_ — emit NetworkPolicy |
+| `networkPolicy.ingress.metricsFrom` | _(chart only)_ — optional scrape peers |
+| `networkPolicy.egress.allowDNS` / `allowHTTPS` / `extraEgress` | _(chart only)_ |
 
 Example `values.yaml` snippet:
 
@@ -35,6 +39,13 @@ github:
 persistence:
   enabled: true
   size: 1Gi
+
+networkPolicy:
+  enabled: true
 ```
+
+When `config.watchNamespace` is set, the chart installs a namespaced `Role` in
+that namespace (plus a lease `Role` in the release namespace) instead of a
+`ClusterRole`. Flux objects and inventory workloads must share that namespace.
 
 Full install examples: [Install with Helm](../install/helm.md)

@@ -2,6 +2,14 @@ GitHub Deployment Bridge has been installed.
 
 Cluster: {{ .Values.config.clusterName }}
 Environment: {{ .Values.config.environment }}
+{{- if .Values.config.watchNamespace }}
+Watch namespace: {{ .Values.config.watchNamespace }}
+  RBAC: namespaced Role in the watch namespace + lease Role in this release namespace.
+  Flux CRs and inventory workloads must live in that namespace.
+{{- else }}
+Watch namespace: all namespaces (ClusterRole)
+  Leader-election leases use a Role in this release namespace only.
+{{- end }}
 {{- if not .Values.persistence.enabled }}
 
 WARNING: persistence.enabled is false — /data uses emptyDir.
@@ -11,12 +19,11 @@ WARNING: persistence.enabled is false — /data uses emptyDir.
 
 Persistence: /data is backed by a PVC. Deployment strategy is Recreate so
   upgrades do not leave a new pod Pending while the volume is on the old pod.
-{{- if and (gt (int .Values.replicaCount) 1) (eq (.Values.persistence.accessMode | default "ReadWriteOnce") "ReadWriteMany") }}
-
-WARNING: replicaCount={{ .Values.replicaCount }} with a shared PVC.
-  SQLite does not support safe multi-writer semantics — use replicaCount: 1
-  even with ReadWriteMany storage, or duplicate GitHub Deployments may occur.
+  Single-writer only — keep replicaCount: 1 (chart fails multi-replica + PVC).
 {{- end }}
+{{- if .Values.networkPolicy.enabled }}
+
+NetworkPolicy: enabled (metrics/probes ingress; DNS + HTTPS egress by default).
 {{- end }}
 
 Ensure your container images include OCI labels:

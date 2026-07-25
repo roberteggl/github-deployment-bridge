@@ -130,7 +130,7 @@ jobs:
             --set config.environment=staging \
             >/dev/null
 
-      - name: Reject unsafe multi-replica RWO config
+      - name: Reject unsafe multi-replica PVC config
         run: |
           if helm template github-deployment-bridge charts/github-deployment-bridge \
             --set github.appId=1 \
@@ -138,7 +138,33 @@ jobs:
             --set github.privateKey=ci-fake-key \
             --set replicaCount=2 \
             >/dev/null 2>&1; then
-            echo "expected helm template to fail when replicaCount > 1 with RWO PVC"
+            echo "expected helm template to fail when replicaCount > 1 with PVC"
+            exit 1
+          fi
+          if helm template github-deployment-bridge charts/github-deployment-bridge \
+            --set github.appId=1 \
+            --set github.installationId=1 \
+            --set github.privateKey=ci-fake-key \
+            --set replicaCount=2 \
+            --set persistence.accessMode=ReadWriteMany \
+            >/dev/null 2>&1; then
+            echo "expected helm template to fail when replicaCount > 1 with RWX PVC"
+            exit 1
+          fi
+
+      - name: Template namespaced RBAC and NetworkPolicy
+        run: |
+          out="$(helm template github-deployment-bridge charts/github-deployment-bridge \
+            --set github.appId=1 \
+            --set github.installationId=1 \
+            --set github.privateKey=ci-fake-key \
+            --set config.watchNamespace=flux-system \
+            --set networkPolicy.enabled=true)"
+          echo "${out}" | grep -q 'kind: Role'
+          echo "${out}" | grep -q 'leader-election'
+          echo "${out}" | grep -q 'kind: NetworkPolicy'
+          if echo "${out}" | grep -q 'kind: ClusterRole'; then
+            echo "expected no ClusterRole when watchNamespace is set"
             exit 1
           fi
 

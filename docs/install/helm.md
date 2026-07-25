@@ -67,10 +67,11 @@ helm upgrade --install github-deployment-bridge \
 flowchart TB
   subgraph chart[Helm release]
     D[Deployment]
-    SA[ServiceAccount + ClusterRole]
+    SA[ServiceAccount + RBAC]
     S[Secret]
     PVC[PersistentVolumeClaim]
     SVC[Service :8080 / :8081]
+    NP[NetworkPolicy optional]
   end
   D --> Flux[Watch Kustomization / HelmRelease]
   D --> GH[GitHub Deployments API]
@@ -80,19 +81,41 @@ flowchart TB
 
 | Resource | Purpose |
 |---|---|
-| `Deployment` | Controller pod |
-| `ServiceAccount` + `ClusterRole` / `ClusterRoleBinding` | Watch Flux Kustomizations, HelmReleases, and workloads |
+| `Deployment` | Controller pod (`replicaCount: 1`, Recreate when PVC enabled) |
+| `ServiceAccount` + RBAC | Watch Flux + workloads; lease Role in the release namespace |
 | `Secret` | GitHub App credentials (unless `existingSecret`) |
 | `PersistentVolumeClaim` | SQLite duplicate-prevention cache |
 | `Service` | Metrics (`:8080`) and probes (`:8081`) |
+| `NetworkPolicy` | Optional; metrics/probes ingress + DNS/HTTPS egress |
 
-Cluster RBAC (read-only for workloads):
+### RBAC modes
+
+| `config.watchNamespace` | Watch / inventory | Leader election |
+|---|---|---|
+| `""` (default) | `ClusterRole` + `ClusterRoleBinding` | `Role` / `RoleBinding` in the **release** namespace |
+| e.g. `flux-system` | `Role` / `RoleBinding` in that namespace | Same lease Role in the **release** namespace |
+
+When `watchNamespace` is set, Flux CRs **and** inventory workloads must live in
+that namespace (the controller cache is namespaced the same way).
+
+Watch permissions (read-only for workloads):
 
 - `kustomize.toolkit.fluxcd.io/kustomizations`: get, list, watch
 - `helm.toolkit.fluxcd.io/helmreleases`: get, list, watch
 - `apps` Deployments / StatefulSets / DaemonSets / ReplicaSets: get, list, watch
-- `coordination.k8s.io/leases`: leader election
 - `events`: create, patch
+
+Lease permissions (release namespace only):
+
+- `coordination.k8s.io/leases`: get, list, watch, create, update, patch, delete
+
+### NetworkPolicy (optional)
+
+Set `networkPolicy.enabled: true` to restrict the pod:
+
+- **Ingress:** TCP metrics + probe ports (optional `ingress.metricsFrom` peers)
+- **Egress:** DNS + HTTPS by default (GitHub API, registries); add
+  `egress.extraEgress` for kube-apiserver CIDRs / `:6443` if needed
 
 ## Configuration knobs
 

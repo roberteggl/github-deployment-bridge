@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Must stay 1 when persistence uses ReadWriteOnce (default). The chart fails
-# helm template when replicaCount > 1 with an RWO PVC; see docs/install/persistence.md.
+# Must stay 1 when persistence is enabled. The chart fails helm template when
+# replicaCount > 1 with a PVC; SQLite is single-writer only (see docs/install/persistence.md).
 replicaCount: 1
 
 image:
@@ -22,6 +22,21 @@ serviceAccount:
 
 rbac:
   create: true
+
+# Opt-in NetworkPolicy. Default false so installs stay compatible with clusters
+# that lack NetworkPolicy support or do not use default-deny CNIs.
+networkPolicy:
+  enabled: false
+  ingress:
+    # Optional peers allowed to scrape metrics / hit probes. Empty = any pod.
+    # Example: [{ namespaceSelector: { matchLabels: { name: monitoring } } }]
+    metricsFrom: []
+  egress:
+    allowDNS: true
+    # GitHub API, GHES, OCI registries (hosts are not enumerable).
+    allowHTTPS: true
+    # Extra egress rules (e.g. kube API on :6443). Appended as-is under egress.
+    extraEgress: []
 
 podAnnotations:
   prometheus.io/scrape: "true"
@@ -65,7 +80,8 @@ persistence:
   enabled: true
   size: 1Gi
   storageClass: ""
-  # ReadWriteOnce allows a single pod writer; replicaCount must be 1 (enforced).
+  # ReadWriteOnce is the production default. replicaCount must stay 1 even with
+  # ReadWriteMany — SQLite does not support safe multi-writer semantics (enforced).
   accessMode: ReadWriteOnce
 
 # Bridge configuration

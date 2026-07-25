@@ -51,17 +51,17 @@ to one replica and a `ReadWriteOnce` PVC so only one pod can mount `/data`.
 | `persistence.enabled: false` (`emptyDir`) | **No** | Cache wiped on every reschedule; duplicates likely |
 
 The Helm chart **fails `helm template` / `helm install`** when
-`replicaCount > 1` with `persistence.enabled: true` and
-`persistence.accessMode: ReadWriteOnce` (the default). This blocks the most
-common misconfiguration: scaling the Deployment while keeping the default RWO
-claim.
+`replicaCount > 1` with `persistence.enabled: true` (any access mode). This
+blocks scaling the Deployment while keeping a SQLite-backed PVC.
 
 `helm install` also prints a **WARNING** in release notes when
-`persistence.enabled: false` (emptyDir) or when `replicaCount > 1` with
-`ReadWriteMany` (shared volume without a shared-database backend).
+`persistence.enabled: false` (emptyDir).
+
+**Accepted risk:** this controller is intentionally single-writer. Node or AZ
+loss means the pod is rescheduled (PVC reattach); there is no active-active
+failover. Leader election does **not** make multiple replicas safe with SQLite.
 
 **Recommendation:** keep `replicaCount: 1` and `persistence.enabled: true` in
-production. Leader election (`config.leaderElection`, on by default) does not
-make multiple replicas safe with separate or SQLite-backed caches.
+production.
 
 Next: [Install with Helm](./helm.md)

@@ -3,8 +3,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 {{- if and .Values.persistence.enabled (gt (int .Values.replicaCount) 1) }}
-{{- $accessMode := .Values.persistence.accessMode | default "ReadWriteOnce" }}
-{{- if eq $accessMode "ReadWriteOnce" }}
-{{- fail (printf "github-deployment-bridge: replicaCount=%d with persistence.enabled=true and persistence.accessMode=%q is unsupported. The SQLite deduplication cache at /data/cache.db allows only one writer. Set replicaCount: 1 (recommended for production) or disable persistence only for ephemeral dev clusters. Multi-replica requires a shared database; SQLite does not provide safe multi-writer semantics even with ReadWriteMany volumes." (int .Values.replicaCount) $accessMode) }}
-{{- end }}
+{{- fail (printf "github-deployment-bridge: replicaCount=%d with persistence.enabled=true is unsupported. The SQLite deduplication cache at /data/cache.db allows only one writer (even with ReadWriteMany). Set replicaCount: 1 (production default) or disable persistence only for ephemeral dev clusters. Multi-replica HA would require a shared database backend; this chart intentionally stays single-writer." (int .Values.replicaCount)) }}
 {{- end }}
