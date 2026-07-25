@@ -1,0 +1,11 @@
+[
+  {
+    "text": "Guide",
+    "link": "/install/",
+    "activeMatch": "^/(install|configuration|architecture|development|releasing)"
+  },
+  {
+    "text": "GitHub",
+    "link": "https://github.com/roberteggl/github-deployment-bridge"
+  }
+]

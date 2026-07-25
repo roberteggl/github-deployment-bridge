@@ -1,0 +1,26 @@
+[
+  {
+    "type": "section-header",
+    "label": "Getting started"
+  },
+  {
+    "type": "dir",
+    "name": "install",
+    "label": "Install"
+  },
+  {
+    "type": "dir",
+    "name": "configuration",
+    "label": "Configuration"
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "section-header",
+    "label": "Reference"
+  },
+  "architecture",
+  "development",
+  "releasing"
+]

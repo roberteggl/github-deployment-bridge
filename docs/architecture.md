@@ -6,36 +6,22 @@ SPDX-License-Identifier: Apache-2.0
 
 # Architecture
 
-```text
-GitHub Actions
-    ↓
-Build container
-    ↓
-Push GHCR image (with OCI labels)
-    ↓
-Flux Image Automation
-    ↓
-Flux reconciles Kustomization / HelmRelease
-    ↓
-Flux GitHub Deployment Bridge
-        ↓
-Derive phase (queued / in_progress / success / failure)
-        ↓
-Read inventory workloads + annotations (skip if empty)
-        ↓
-Fetch OCI manifest + config (no layers)
-        ↓
-Resolve metadata (annotation > OCI > default)
-        ↓
-Authenticate as GitHub App
-        ↓
-Create GitHub Deployment (once) + payload
-        ↓
-Create Deployment Status (lifecycle)
-        ↓
-Cache deployment_id + latest status (idempotent)
-        ↓
-On success: mark prior success inactive
+```mermaid
+flowchart TD
+  GHA[GitHub Actions] --> Build[Build container]
+  Build --> Push[Push GHCR image with OCI labels]
+  Push --> FIA[Flux Image Automation]
+  FIA --> Flux[Flux reconciles Kustomization / HelmRelease]
+  Flux --> Bridge[github-deployment-bridge]
+  Bridge --> Phase[Derive phase]
+  Phase --> Inv[Read inventory workloads + annotations]
+  Inv --> OCI[Fetch OCI manifest + config]
+  OCI --> Meta[Resolve metadata annotation > OCI > default]
+  Meta --> Auth[Authenticate as GitHub App]
+  Auth --> Dep[Create GitHub Deployment once]
+  Dep --> Status[Create Deployment Status]
+  Status --> Cache[(Cache deployment_id + status)]
+  Status --> Inactive[On success: mark prior success inactive]
 ```
 
 ## Design principles
@@ -68,10 +54,15 @@ Events fire when conditions, `observedGeneration`, or revision fields change. Re
 
 The reporter maps desired phases onto GitHub statuses with an idempotent state machine:
 
-```text
-queued → in_progress → success → inactive
-                     ↘ failure
-queued / in_progress → error   (bridge-only faults after a deployment exists)
+```mermaid
+stateDiagram-v2
+  [*] --> queued
+  queued --> in_progress
+  in_progress --> success
+  in_progress --> failure
+  queued --> error: bridge-only fault
+  in_progress --> error: bridge-only fault
+  success --> inactive: newer commit succeeds
 ```
 
 - **Catch-up:** if the cache is empty and Flux is already terminal, emit only that terminal status (no synthetic history).
@@ -79,6 +70,17 @@ queued / in_progress → error   (bridge-only faults after a deployment exists)
 - Never transition `success` → `in_progress`. Never send duplicate identical statuses.
 
 ## Workload discovery
+
+```mermaid
+flowchart TD
+  Inv[.status.inventory] --> Kinds{Kind}
+  Kinds -->|Deployment / StatefulSet / DaemonSet| Workload[Read workload]
+  Kinds -->|ReplicaSet| Owner[Resolve owner Deployment]
+  Owner --> Workload
+  Kinds -->|Job / CronJob| Ignore[Ignore]
+  Workload --> Ann[Collect github-deployment-bridge.io/* annotations]
+  Ann --> Images[Collect container images]
+```
 
 1. Parse `.status.inventory` for `Deployment`, `StatefulSet`, and `DaemonSet`.
 2. Resolve `ReplicaSet` entries via owner references to their controlling `Deployment`.
@@ -94,6 +96,13 @@ Priority for every field:
 1. Kubernetes annotation
 2. OCI label
 3. Controller default (if applicable)
+
+```mermaid
+flowchart LR
+  Ann[Annotation] -->|wins| Field[Resolved field]
+  OCI[OCI label] -->|if no annotation| Field
+  Def[Controller default] -->|if neither| Field
+```
 
 ### OCI labels
 

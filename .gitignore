@@ -4,6 +4,9 @@
 
 /bin/
 /dist/
+/doc_build/
+/node_modules/
+/.rspress/
 *.db
 *.sqlite
 *.pem

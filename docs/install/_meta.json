@@ -1,0 +1,10 @@
+[
+  "index",
+  "github-app",
+  "secrets",
+  "persistence",
+  "helm",
+  "verify",
+  "registries",
+  "uninstall"
+]

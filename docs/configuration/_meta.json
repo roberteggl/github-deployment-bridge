@@ -1,0 +1,10 @@
+[
+  "index",
+  "environment",
+  "helm-values",
+  "secrets",
+  "persistence",
+  "github-app",
+  "registries",
+  "metrics"
+]

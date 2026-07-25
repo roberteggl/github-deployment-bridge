@@ -35,12 +35,15 @@ Read these before making non-trivial changes:
 | Doc | Contents |
 |---|---|
 | [README.md](README.md) | Overview, quick start |
-| [docs/install.md](docs/install.md) | Cluster install, GitHub App, secrets, PVC |
-| [docs/configuration.md](docs/configuration.md) | Env vars, Helm values, permissions, registries |
+| [docs/install/](docs/install/) | Cluster install, GitHub App, secrets, PVC, Helm |
+| [docs/configuration/](docs/configuration/) | Env vars, Helm values, permissions, registries, metrics |
 | [docs/architecture.md](docs/architecture.md) | Event flow, lifecycle, workload discovery, metadata (OCI + annotations) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | DCO, Conventional Commits, PR process |
-| [docs/development.md](docs/development.md) | Build, test, local run, integration tests |
+| [docs/development.md](docs/development.md) | Build, test, local run, integration tests, Rspress docs |
 | [docs/releasing.md](docs/releasing.md) | Tag-driven release pipeline (git-cliff, GHCR, Helm) |
+
+Published docs site: Rspress (`rspress.config.ts`) → GitHub Pages via
+[`.github/workflows/docs.yml`](.github/workflows/docs.yml). Local: `npm ci && npm run dev`.
 
 ## Commits (DCO / `-s` required)
 

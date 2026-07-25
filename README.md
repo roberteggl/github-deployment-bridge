@@ -6,6 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # github-deployment-bridge
 
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-0b1020)](https://roberteggl.github.io/github-deployment-bridge/)
 [![REUSE status](https://api.reuse.software/badge/github.com/roberteggl/github-deployment-bridge)](https://api.reuse.software/info/github.com/roberteggl/github-deployment-bridge)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/roberteggl/github-deployment-bridge/badge)](https://scorecard.dev/viewer/?uri=github.com/roberteggl/github-deployment-bridge)
 [![Artifact Attestations](https://img.shields.io/badge/attestations-SLSA_provenance-2ea44f)](https://github.com/roberteggl/github-deployment-bridge/attestations)
@@ -17,20 +18,14 @@ When a Flux `Kustomization` or `HelmRelease` reconciles, the bridge inspects dep
 
 ## How it works
 
-```text
-Flux Kustomization / HelmRelease (conditions change)
-        ↓
-Derive phase + discover inventory workloads + annotations
-        ↓
-Fetch OCI manifest + config labels (no layer pull)
-        ↓
-Resolve metadata (annotation > OCI > default)
-        ↓
-Authenticate as GitHub App
-        ↓
-Create Deployment (once) + Status (lifecycle)
-        ↓
-Cache (owner, repo, environment, commit, deployment-name) + latest status
+```mermaid
+flowchart TD
+  Flux[Flux Kustomization / HelmRelease] --> Phase[Derive phase + discover inventory]
+  Phase --> OCI[Fetch OCI labels]
+  OCI --> Meta[Resolve metadata]
+  Meta --> Auth[GitHub App auth]
+  Auth --> Dep[Create Deployment + Status]
+  Dep --> Cache[(SQLite cache)]
 ```
 
 ### OCI labels
@@ -52,7 +47,7 @@ Prefix: `github-deployment-bridge.io/` — for example `environment`, `repositor
 ## Install
 
 Full guide (GitHub App permissions, secrets, PVC, Helm values, verify):
-**[docs/install.md](docs/install.md)**.
+**[Install](https://roberteggl.github.io/github-deployment-bridge/install/)** · [docs/install/](docs/install/).
 
 Quick start with an existing Secret:
 
@@ -79,15 +74,15 @@ helm upgrade --install github-deployment-bridge \
 | **Contents** | Read |
 | **Metadata** | Read |
 
-PATs are not supported. Details: [docs/install.md#github-app-setup](docs/install.md#github-app-setup).
+PATs are not supported. Details: [docs/install/github-app.md](docs/install/github-app.md).
 
 ### Configuration
 
-Env vars and Helm mapping: [docs/configuration.md](docs/configuration.md).
+Env vars and Helm mapping: [docs/configuration/](docs/configuration/).
 
 Why a PVC: SQLite at `/data/cache.db` deduplicates
 `(owner, repo, environment, commitSHA, deploymentName)` across restarts - see
-[docs/install.md#why-a-pvc](docs/install.md#why-a-pvc).
+[docs/install/persistence.md](docs/install/persistence.md).
 
 ## Observability
 
@@ -109,7 +104,7 @@ Verify artifacts: [docs/releasing.md](docs/releasing.md#verify-signatures-and-at
 make tidy test build
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [docs/install.md](docs/install.md),
+See [CONTRIBUTING.md](CONTRIBUTING.md), [docs/install/](docs/install/),
 [docs/development.md](docs/development.md), [docs/architecture.md](docs/architecture.md),
 and [docs/releasing.md](docs/releasing.md).
 

@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 # Releasing
 
 Releases are fully automated on `v*` tag push via
-[`.github/workflows/release.yml`](../.github/workflows/release.yml).
+[`.github/workflows/release.yml`](https://github.com/roberteggl/github-deployment-bridge/blob/main/.github/workflows/release.yml).
 
 ## Pipeline
 

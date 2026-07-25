@@ -21,6 +21,17 @@ make test
 make build
 ```
 
+## Documentation site
+
+Docs are built with [Rspress](https://rspress.rs/) from this `docs/` tree and
+published to GitHub Pages on pushes to `main`.
+
+```bash
+npm ci
+npm run dev      # local preview
+npm run build    # output in doc_build/
+```
+
 ## Run locally
 
 ```bash
@@ -55,7 +66,8 @@ make docker-build IMG=ghcr.io/roberteggl/github-deployment-bridge VERSION=dev
 
 ## Dependency updates
 
-[Renovate](https://docs.renovatebot.com/) is configured via [`renovate.json`](../renovate.json).
+[Renovate](https://docs.renovatebot.com/) is configured via
+[`renovate.json`](https://github.com/roberteggl/github-deployment-bridge/blob/main/renovate.json).
 It opens `chore(deps):` PRs labeled `dependencies`, with automerge for safe
 non-major updates (Go modules, Actions, Docker digests).
 
