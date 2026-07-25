@@ -2,6 +2,11 @@ GitHub Deployment Bridge has been installed.
 
 Cluster: {{ .Values.config.clusterName }}
 Environment: {{ .Values.config.environment }}
+{{- if .Values.persistence.enabled }}
+
+Persistence: /data is backed by a PVC. Deployment strategy is Recreate so
+  upgrades do not leave a new pod Pending while the volume is on the old pod.
+{{- end }}
 
 Ensure your container images include OCI labels:
   org.opencontainers.image.source

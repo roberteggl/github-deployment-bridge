@@ -24,6 +24,8 @@ With `persistence.enabled=true` (the chart default):
 - A 1Gi `PersistentVolumeClaim` backs `/data`
 - Cache entries survive pod restarts and upgrades
 - After a restart, the bridge still knows which commits were already reported
+- The Deployment uses `strategy.type: Recreate` so rolling upgrades do not
+  leave a new pod `Pending` while the volume is still attached to the old pod
 
 Without a PVC (`persistence.enabled=false`), the chart uses an `emptyDir`. The
 cache is lost on every reschedule, so previously reported commits may be
