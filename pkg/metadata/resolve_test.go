@@ -27,6 +27,7 @@ func TestResolvePriorityAndDefaults(t *testing.T) {
 		metadata.AnnotationEnvironment: "production",
 	}
 	got, err := metadata.Resolve(ann, oci, metadata.Defaults{
+		Cluster:        "staging-cluster",
 		Environment:    "staging",
 		EnvironmentURL: "https://staging.example.com",
 		LogURL:         "https://grafana.example.com/?sha=abcdef0123456789",
@@ -56,6 +57,9 @@ func TestResolvePriorityAndDefaults(t *testing.T) {
 	if got.EnvironmentURL != "https://staging.example.com" {
 		t.Fatalf("environment-url = %s", got.EnvironmentURL)
 	}
+	if got.Cluster != "staging-cluster" {
+		t.Fatalf("cluster = %s, want staging-cluster", got.Cluster)
+	}
 }
 
 func TestResolveAnnotationOverrides(t *testing.T) {
@@ -76,7 +80,10 @@ func TestResolveAnnotationOverrides(t *testing.T) {
 		metadata.AnnotationProduction:     "false",
 		metadata.AnnotationDeploymentName: "api",
 	}
-	got, err := metadata.Resolve(ann, oci, metadata.Defaults{Environment: "staging"})
+	got, err := metadata.Resolve(ann, oci, metadata.Defaults{
+		Cluster:     "staging-cluster",
+		Environment: "staging",
+	})
 	if err != nil {
 		t.Fatalf("Resolve: %v", err)
 	}
@@ -106,7 +113,10 @@ func TestResolveAutoReportRequiresOptIn(t *testing.T) {
 	_, err := metadata.Resolve(nil, ocilabels.Metadata{
 		Source:   "https://github.com/example/backend",
 		Revision: "abcdef0123456789",
-	}, metadata.Defaults{Environment: "production"})
+	}, metadata.Defaults{
+		Cluster:     "staging-cluster",
+		Environment: "production",
+	})
 	var skip *metadata.SkipError
 	if !errors.As(err, &skip) {
 		t.Fatalf("expected SkipError for missing auto-report, got %v", err)
@@ -132,7 +142,10 @@ func TestResolveMissingRequired(t *testing.T) {
 		metadata.AnnotationAutoReport: "true",
 	}, ocilabels.Metadata{
 		Source: "https://github.com/example/backend",
-	}, metadata.Defaults{Environment: "production"})
+	}, metadata.Defaults{
+		Cluster:     "staging-cluster",
+		Environment: "production",
+	})
 	if err == nil {
 		t.Fatal("expected error for missing commit")
 	}
@@ -150,7 +163,10 @@ func TestResolveInvalidCommit(t *testing.T) {
 	}, ocilabels.Metadata{
 		Source:   "https://github.com/example/backend",
 		Revision: "not-a-sha!",
-	}, metadata.Defaults{Environment: "production"})
+	}, metadata.Defaults{
+		Cluster:     "staging-cluster",
+		Environment: "production",
+	})
 	if err == nil {
 		t.Fatal("expected invalid SHA error")
 	}
@@ -165,7 +181,10 @@ func TestResolveInvalidHTTPSURL(t *testing.T) {
 	}, ocilabels.Metadata{
 		Source:   "https://github.com/example/backend",
 		Revision: "abcdef0123456789",
-	}, metadata.Defaults{Environment: "production"})
+	}, metadata.Defaults{
+		Cluster:     "staging-cluster",
+		Environment: "production",
+	})
 	if err == nil {
 		t.Fatal("expected HTTPS validation error")
 	}
@@ -190,12 +209,55 @@ func TestValidGitSHA(t *testing.T) {
 	}
 }
 
-func TestIsReserved(t *testing.T) {
+func TestResolveOptionalPayloadAnnotations(t *testing.T) {
 	t.Parallel()
-	if !metadata.IsReserved(metadata.AnnotationTeam) {
-		t.Fatal("team should be reserved")
+
+	ann := map[string]string{
+		metadata.AnnotationAutoReport:   "true",
+		metadata.AnnotationCluster:      "prod-eu-west",
+		metadata.AnnotationTeam:         "platform",
+		metadata.AnnotationService:      "checkout",
+		metadata.AnnotationComponent:    "api",
+		metadata.AnnotationSlackChannel: "#deploys",
+		metadata.AnnotationOwner:        "alice",
+		metadata.AnnotationRelease:      "2026.07.25",
+		metadata.AnnotationTag:          "v1.2.3",
 	}
-	if metadata.IsReserved(metadata.AnnotationEnvironment) {
-		t.Fatal("environment should not be reserved")
+	got, err := metadata.Resolve(ann, ocilabels.Metadata{
+		Source:   "https://github.com/example/backend",
+		Revision: "abcdef0123456789",
+	}, metadata.Defaults{
+		Cluster:     "fallback-cluster",
+		Environment: "production",
+	})
+	if err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+	if got.Cluster != "prod-eu-west" {
+		t.Fatalf("cluster = %q, want annotation override", got.Cluster)
+	}
+	if got.Team != "platform" || got.Service != "checkout" || got.Component != "api" {
+		t.Fatalf("team/service/component = %q/%q/%q", got.Team, got.Service, got.Component)
+	}
+	if got.SlackChannel != "#deploys" || got.Owner != "alice" || got.Release != "2026.07.25" || got.Tag != "v1.2.3" {
+		t.Fatalf("slack/owner/release/tag = %q/%q/%q/%q", got.SlackChannel, got.Owner, got.Release, got.Tag)
+	}
+
+	payload := map[string]any{"cluster": got.Cluster}
+	metadata.ApplyPayloadExtras(payload, got)
+	for _, key := range []string{"team", "service", "component", "slackChannel", "owner", "release", "tag"} {
+		if _, ok := payload[key]; !ok {
+			t.Fatalf("payload missing %q: %#v", key, payload)
+		}
+	}
+}
+
+func TestIsOptionalPayloadAnnotation(t *testing.T) {
+	t.Parallel()
+	if !metadata.IsOptionalPayloadAnnotation(metadata.AnnotationTeam) {
+		t.Fatal("team should be optional payload annotation")
+	}
+	if metadata.IsOptionalPayloadAnnotation(metadata.AnnotationEnvironment) {
+		t.Fatal("environment should not be optional payload annotation")
 	}
 }

@@ -15,6 +15,7 @@ import (
 
 // Defaults are controller-level fallbacks applied when annotations and OCI labels omit a field.
 type Defaults struct {
+	Cluster        string
 	Environment    string
 	EnvironmentURL string
 	LogURL         string // optional pre-expanded fallback (usually set by the caller after resolve)
@@ -31,6 +32,14 @@ type Resolved struct {
 	Description    string
 	Production     bool
 	DeploymentName string
+	Cluster        string
+	Team           string
+	Service        string
+	Component      string
+	SlackChannel   string
+	Owner          string
+	Release        string
+	Tag            string
 	Version        string // optional; logging/metrics only
 	Title          string // optional; logging only
 	Created        string // optional; diagnostics only
@@ -112,6 +121,11 @@ func Resolve(annotations map[string]string, oci ocilabels.Metadata, defaults Def
 		return Resolved{}, fmt.Errorf("deployment-name must not be empty")
 	}
 
+	cluster := firstNonEmpty(ann[AnnotationCluster], defaults.Cluster)
+	if strings.TrimSpace(cluster) == "" {
+		return Resolved{}, fmt.Errorf("cluster must not be empty")
+	}
+
 	return Resolved{
 		Repo:           repo,
 		Commit:         commit,
@@ -121,6 +135,14 @@ func Resolve(annotations map[string]string, oci ocilabels.Metadata, defaults Def
 		Description:    description,
 		Production:     production,
 		DeploymentName: deploymentName,
+		Cluster:        cluster,
+		Team:           strings.TrimSpace(ann[AnnotationTeam]),
+		Service:        strings.TrimSpace(ann[AnnotationService]),
+		Component:      strings.TrimSpace(ann[AnnotationComponent]),
+		SlackChannel:   strings.TrimSpace(ann[AnnotationSlackChannel]),
+		Owner:          strings.TrimSpace(ann[AnnotationOwner]),
+		Release:        strings.TrimSpace(ann[AnnotationRelease]),
+		Tag:            strings.TrimSpace(ann[AnnotationTag]),
 		Version:        oci.Version,
 		Title:          oci.Title,
 		Created:        oci.Created,

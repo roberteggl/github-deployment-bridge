@@ -406,6 +406,7 @@ func (r *Reporter) resolveImage(ctx context.Context, img WorkloadImage) (metadat
 	}
 
 	resolved, err := metadata.Resolve(img.Annotations, ociMeta, metadata.Defaults{
+		Cluster:        r.cfg.ClusterName,
 		Environment:    r.cfg.Environment,
 		EnvironmentURL: r.cfg.EnvironmentURL,
 		Description:    "Deployed by FluxCD",
@@ -479,7 +480,7 @@ func (r *Reporter) buildDeploymentPayload(
 	digest string,
 ) map[string]any {
 	payload := map[string]any{
-		"cluster":           r.cfg.ClusterName,
+		"cluster":           resolved.Cluster,
 		"namespace":         img.Namespace,
 		"sourceNamespace":   in.Namespace,
 		"deploymentName":    resolved.DeploymentName,
@@ -498,6 +499,7 @@ func (r *Reporter) buildDeploymentPayload(
 	if resolved.Version != "" {
 		payload["version"] = resolved.Version
 	}
+	metadata.ApplyPayloadExtras(payload, resolved)
 	return payload
 }
 
@@ -510,7 +512,7 @@ func (r *Reporter) buildLegacyDeploymentPayload(
 	digest string,
 ) map[string]any {
 	payload := map[string]any{
-		"cluster":           r.cfg.ClusterName,
+		"cluster":           resolved.Cluster,
 		"namespace":         in.Namespace,
 		"deploymentName":    resolved.DeploymentName,
 		"image":             img.Image,
@@ -528,6 +530,7 @@ func (r *Reporter) buildLegacyDeploymentPayload(
 	if resolved.Version != "" {
 		payload["version"] = resolved.Version
 	}
+	metadata.ApplyPayloadExtras(payload, resolved)
 	return payload
 }
 

@@ -164,6 +164,45 @@ func TestReporterCatchUpSuccessAndSkipsDuplicates(t *testing.T) {
 	}
 }
 
+func TestReporterPayloadOptionalAnnotations(t *testing.T) {
+	t.Parallel()
+	r, g := newTestReporter(t, nil)
+
+	in := sampleInput(deployment.PhaseSuccess)
+	in.Images[0].Annotations = map[string]string{
+		metadata.AnnotationAutoReport:   "true",
+		metadata.AnnotationCluster:      "prod-eu-west",
+		metadata.AnnotationTeam:         "platform",
+		metadata.AnnotationService:      "checkout",
+		metadata.AnnotationComponent:    "api",
+		metadata.AnnotationSlackChannel: "#deploys",
+		metadata.AnnotationOwner:        "alice",
+		metadata.AnnotationRelease:      "2026.07.25",
+		metadata.AnnotationTag:          "v1.2.3",
+	}
+	if err := r.Report(context.Background(), in); err != nil {
+		t.Fatalf("report: %v", err)
+	}
+	if len(g.deployments) != 1 {
+		t.Fatalf("got %d deployments, want 1", len(g.deployments))
+	}
+	payload := g.deployments[0].Payload
+	for key, want := range map[string]any{
+		"cluster":      "prod-eu-west",
+		"team":         "platform",
+		"service":      "checkout",
+		"component":    "api",
+		"slackChannel": "#deploys",
+		"owner":        "alice",
+		"release":      "2026.07.25",
+		"tag":          "v1.2.3",
+	} {
+		if payload[key] != want {
+			t.Fatalf("payload[%q] = %#v, want %#v", key, payload[key], want)
+		}
+	}
+}
+
 func TestReporterRecoversDeploymentAfterCreateCrash(t *testing.T) {
 	t.Parallel()
 
