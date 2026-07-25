@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 # GitHub Deployment Bridge
 
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-0b1020)](https://roberteggl.github.io/github-deployment-bridge/)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/github-deployment-bridge)](https://artifacthub.io/packages/helm/github-deployment-bridge/github-deployment-bridge)
 [![REUSE status](https://api.reuse.software/badge/github.com/roberteggl/github-deployment-bridge)](https://api.reuse.software/info/github.com/roberteggl/github-deployment-bridge)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/roberteggl/github-deployment-bridge/badge)](https://scorecard.dev/viewer/?uri=github.com/roberteggl/github-deployment-bridge)
 [![Artifact Attestations](https://img.shields.io/badge/attestations-SLSA_provenance-2ea44f)](https://github.com/roberteggl/github-deployment-bridge/attestations)
@@ -80,7 +81,7 @@ PATs are not supported. Details: [docs/install/github-app.md](docs/install/githu
 
 Env vars and Helm mapping: [docs/configuration/](docs/configuration/).
 
-Why a PVC: SQLite at `/data/cache.db` deduplicates
+PVC / SQLite at `/data/cache.db` deduplicates
 `(owner, repo, environment, commitSHA, deploymentName)` across restarts - see
 [docs/install/persistence.md](docs/install/persistence.md).
 

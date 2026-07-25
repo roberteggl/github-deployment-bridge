@@ -7,21 +7,11 @@ SPDX-License-Identifier: Apache-2.0
 # Architecture
 
 ```mermaid
-flowchart TD
-  GHA[GitHub Actions] --> Build[Build container]
-  Build --> Push[Push GHCR image with OCI labels]
-  Push --> FIA[Flux Image Automation]
-  FIA --> Flux[Flux reconciles Kustomization / HelmRelease]
-  Flux --> Bridge[GitHub Deployment Bridge]
-  Bridge --> Phase[Derive phase]
-  Phase --> Inv[Read inventory workloads + annotations]
-  Inv --> OCI[Fetch OCI manifest + config]
-  OCI --> Meta[Resolve metadata annotation > OCI > default]
-  Meta --> Auth[Authenticate as GitHub App]
-  Auth --> Dep[Create GitHub Deployment once]
-  Dep --> Status[Create Deployment Status]
-  Status --> Cache[(Cache deployment_id + status)]
-  Status --> Inactive[On success: mark prior success inactive]
+flowchart LR
+  Flux[Flux Kustomization / HelmRelease] --> Bridge[Deployment Bridge]
+  Bridge --> Meta[Resolve phase + metadata]
+  Meta --> GH[GitHub Deployment + Status]
+  GH --> Cache[(SQLite cache)]
 ```
 
 ## Design principles
@@ -141,7 +131,7 @@ Reserved for future use (recognized, ignored in v1): `team`, `service`, `compone
 | Field | Rule |
 |---|---|
 | Repository | Must resolve to `owner/repository` |
-| Commit | Valid Git SHA (7–40 hex) |
+| Commit | Valid Git SHA (7-40 hex) |
 | Environment | Non-empty |
 | Environment / log URL | Absolute `https://` URL when set |
 

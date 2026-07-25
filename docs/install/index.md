@@ -62,8 +62,9 @@ Full precedence and annotation list:
 
 1. [GitHub App setup](./github-app.md)
 2. [Secrets](./secrets.md)
-3. [Persistence (PVC)](./persistence.md)
+3. [PVC](./persistence.md)
 4. [Install with Helm](./helm.md)
 5. [Verify](./verify.md)
 
-Optional: [Private image registries](./registries.md) · [Uninstall](./uninstall.md)
+Optional: [Private image registries](./registries.md) · [Uninstall](./uninstall.md) ·
+[Artifact Hub](https://artifacthub.io/packages/helm/github-deployment-bridge/github-deployment-bridge)

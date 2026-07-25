@@ -5,7 +5,7 @@ titleSuffix: FluxCD to GitHub Deployments
 hero:
   name: GitHub Deployment Bridge
   text: Flux state, mirrored to GitHub Deployments
-  tagline: A Kubernetes controller that watches Flux Kustomizations and HelmReleases and reports lifecycle to the GitHub Deployments API — observe only, never orchestrate.
+  tagline: A Kubernetes controller that watches Flux Kustomizations and HelmReleases and reports lifecycle to the GitHub Deployments API - observe only, never orchestrate.
   actions:
     - theme: brand
       text: Install

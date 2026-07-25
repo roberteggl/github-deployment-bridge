@@ -59,4 +59,4 @@ helm upgrade --install github-deployment-bridge \
   --set config.environment=production
 ```
 
-Next: [Persistence](./persistence.md) · [Install with Helm](./helm.md)
+Next: [PVC](./persistence.md) · [Install with Helm](./helm.md)

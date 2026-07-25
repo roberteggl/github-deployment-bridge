@@ -12,7 +12,7 @@
     "noEmit": true,
     "isolatedModules": true
   },
-  "include": ["rspress.config.ts", "docs/**/*"],
+  "include": ["rspress.config.ts", "docs/**/*", "theme/**/*"],
   "mdx": {
     "checkMdx": true
   }

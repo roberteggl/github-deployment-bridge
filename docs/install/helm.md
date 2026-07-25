@@ -6,6 +6,9 @@ SPDX-License-Identifier: Apache-2.0
 
 # Install with Helm
 
+Chart on [Artifact Hub](https://artifacthub.io/packages/helm/github-deployment-bridge/github-deployment-bridge)
+(Cosign-signed, verified publisher).
+
 ## From the published OCI chart
 
 ```bash
@@ -127,7 +130,7 @@ exist. Alert meanings and triage: [Runbook](../operations/runbook.md).
 ## Configuration
 
 All runtime settings are environment variables. Helm `config.*` / `github.*`
-values map to those vars — see [Configuration](../configuration/) for the full
+values map to those vars - see [Configuration](../configuration/) for the full
 reference (env vars, Helm map, metrics, registries).
 
 | Helm value | Env | Meaning |

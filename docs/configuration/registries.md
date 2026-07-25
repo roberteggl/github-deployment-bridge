@@ -6,11 +6,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # Private registries
 
-The bridge reads OCI labels via `authn.DefaultKeychain` — **not** via
+The bridge reads OCI labels via `authn.DefaultKeychain` - **not** via
 `imagePullSecrets` (those only pull this chart's own image).
 
 For private registries (including private GHCR packages), mount a
-`kubernetes.io/dockerconfigjson` Secret — typically the same one Flux already
+`kubernetes.io/dockerconfigjson` Secret - typically the same one Flux already
 uses:
 
 ```yaml

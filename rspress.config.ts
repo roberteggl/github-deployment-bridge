@@ -18,6 +18,18 @@ const config: UserConfig = {
   // Project Pages live at https://<user>.github.io/<repo>/
   base: isGitHubActions ? "/github-deployment-bridge/" : "/",
   lang: "en",
+  head: [
+    ["meta", { name: "author", content: "Robert Eggl" }],
+    ["link", { rel: "author", href: "https://eggl.dev" }],
+    [
+      "link",
+      {
+        rel: "alternate",
+        title: "Artifact Hub",
+        href: "https://artifacthub.io/packages/helm/github-deployment-bridge/github-deployment-bridge",
+      },
+    ],
+  ],
   plugins: [
     mermaid({
       mermaidConfig: {
@@ -60,7 +72,7 @@ const config: UserConfig = {
     enableScrollToTop: true,
     footer: {
       message:
-        'Released under the <a href="https://github.com/roberteggl/github-deployment-bridge/blob/main/LICENSE">Apache License 2.0</a>.',
+        'Copyright © 2026 Robert Eggl. Released under the <a href="https://github.com/roberteggl/github-deployment-bridge/blob/main/LICENSE">Apache License 2.0</a>.',
     },
   },
   builderConfig: {

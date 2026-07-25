@@ -16,7 +16,7 @@ Credentials come from a Kubernetes Secret (never a PAT):
 
 Prefer `github.existingSecret`. Inline `github.appId` / `installationId` /
 `privateKey` require `github.allowInsecureValues=true` and are also stored in
-Helm release history — fine for local/dev only.
+Helm release history - fine for local/dev only.
 
 Chart-managed Secrets roll the Deployment via `checksum/secret`. With
 `existingSecret`, restart the Deployment (or Reloader) after rotating keys.

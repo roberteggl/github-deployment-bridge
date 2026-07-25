@@ -2,7 +2,11 @@
   "index",
   "github-app",
   "secrets",
-  "persistence",
+  {
+    "type": "file",
+    "name": "persistence",
+    "label": "PVC"
+  },
   "helm",
   "verify",
   "registries",

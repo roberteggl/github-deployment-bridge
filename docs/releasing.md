@@ -104,6 +104,9 @@ layout, so the release workflow signs with `--new-bundle-format=false
 
 ## Artifact Hub
 
+Package page:
+[artifacthub.io/packages/helm/github-deployment-bridge/github-deployment-bridge](https://artifacthub.io/packages/helm/github-deployment-bridge/github-deployment-bridge).
+
 The OCI Helm chart can be listed on [Artifact Hub](https://artifacthub.io/).
 Each release pushes repository metadata from
 [`artifacthub-repo.yml`](https://github.com/roberteggl/github-deployment-bridge/blob/main/artifacthub-repo.yml) to:

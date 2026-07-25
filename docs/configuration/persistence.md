@@ -20,8 +20,8 @@ annotations).
 | `persistence.accessMode` | `ReadWriteOnce` | Single writer |
 | `replicaCount` | `1` | Required with a SQLite-backed PVC |
 
-Multi-replica with persistence is unsupported — the chart fails closed. Keep
+Multi-replica with persistence is unsupported - the chart fails closed. Keep
 `replicaCount: 1` and `persistence.enabled: true` in production.
 
 Why this matters, and what breaks without a PVC:
-[Install → Persistence](../install/persistence.md).
+[Install → PVC](../install/persistence.md).

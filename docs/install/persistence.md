@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev>
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Why a PVC?
+# PVC
 
 The bridge keeps a small SQLite database at `/data/cache.db` keyed by
 `(owner, repo, environment, commitSHA, deploymentName)`. That cache prevents

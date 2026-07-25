@@ -4,7 +4,7 @@
 /*
  * Control-plane aesthetic: warm paper, charcoal ink, a single teal accent.
  * No purple washes, glow, or toy icons.
- * Fonts are self-hosted under styles/fonts/ — no third-party font requests.
+ * Fonts are self-hosted under styles/fonts/ - no third-party font requests.
  */
 
 @font-face {
@@ -97,7 +97,7 @@ html:not(.rp-dark) {
   --rp-c-text-0: var(--gdb-ink);
   --rp-c-text-1: #1c2228;
   --rp-c-text-2: #4a535c;
-  --rp-c-text-3: #14181c55;
+  --rp-c-text-3: #6b7380;
   --rp-c-text-code: #175853;
   --rp-c-link: var(--gdb-accent-strong);
 
@@ -134,7 +134,7 @@ html.rp-dark {
   --rp-c-text-0: var(--gdb-ink);
   --rp-c-text-1: #dfe3e0;
   --rp-c-text-2: #9aa3a0;
-  --rp-c-text-3: #e8ebe855;
+  --rp-c-text-3: #8a9390;
   --rp-c-text-code: #8fd9d3;
   --rp-c-link: var(--gdb-accent-strong);
 
@@ -289,4 +289,36 @@ html.rp-dark .rp-button--brand:hover {
   border: 1px solid var(--rp-c-divider-light);
   border-radius: var(--rp-radius);
   padding: 1rem;
+}
+
+/* Copyright footer on doc pages (home uses built-in HomeFooter) */
+.gdb-site-footer {
+  border-top: 1px solid var(--rp-c-divider-light);
+  margin-top: 2rem;
+  padding: 1.25rem 0 0.5rem;
+  text-align: center;
+}
+
+.gdb-site-footer__message {
+  color: var(--rp-c-text-3);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.gdb-site-footer__message a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+/* Last Updated sits opposite Edit this page - keep it readable */
+.rp-last-updated {
+  color: var(--rp-c-text-2);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.rp-doc-footer__edit {
+  gap: 1rem;
+  flex-wrap: wrap;
 }
