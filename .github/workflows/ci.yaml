@@ -84,6 +84,18 @@ jobs:
             --set config.environment=staging \
             >/dev/null
 
+      - name: Reject unsafe multi-replica RWO config
+        run: |
+          if helm template github-deployment-bridge charts/github-deployment-bridge \
+            --set github.appId=1 \
+            --set github.installationId=1 \
+            --set github.privateKey=ci-fake-key \
+            --set replicaCount=2 \
+            >/dev/null 2>&1; then
+            echo "expected helm template to fail when replicaCount > 1 with RWO PVC"
+            exit 1
+          fi
+
   container:
     name: Container (${{ matrix.name }})
     runs-on: ${{ matrix.runner }}

@@ -38,7 +38,30 @@ reported again to GitHub.
 | `persistence.storageClass` | `""` | Cluster default StorageClass |
 | `persistence.accessMode` | `ReadWriteOnce` | Single-replica controller |
 
-Leave `replicaCount` at `1` when using `ReadWriteOnce`. Leader election is on by
-default if you scale later with a shared/ReadWriteMany volume.
+## Single replica (production default)
+
+The deduplication cache is **SQLite with a single writer**. The chart defaults
+to one replica and a `ReadWriteOnce` PVC so only one pod can mount `/data`.
+
+| Configuration | Safe for production? | Why |
+|---|---|---|
+| `replicaCount: 1`, `persistence.enabled: true`, RWO PVC | Yes | One writer, cache survives restarts |
+| `replicaCount > 1`, RWO PVC | **No** | Second pod cannot mount the volume; if forced, each writer has a separate cache |
+| `replicaCount > 1`, RWX PVC | **No** | Volume can be shared, but SQLite does not provide safe multi-writer semantics |
+| `persistence.enabled: false` (`emptyDir`) | **No** | Cache wiped on every reschedule; duplicates likely |
+
+The Helm chart **fails `helm template` / `helm install`** when
+`replicaCount > 1` with `persistence.enabled: true` and
+`persistence.accessMode: ReadWriteOnce` (the default). This blocks the most
+common misconfiguration: scaling the Deployment while keeping the default RWO
+claim.
+
+`helm install` also prints a **WARNING** in release notes when
+`persistence.enabled: false` (emptyDir) or when `replicaCount > 1` with
+`ReadWriteMany` (shared volume without a shared-database backend).
+
+**Recommendation:** keep `replicaCount: 1` and `persistence.enabled: true` in
+production. Leader election (`config.leaderElection`, on by default) does not
+make multiple replicas safe with separate or SQLite-backed caches.
 
 Next: [Install with Helm](./helm.md)
