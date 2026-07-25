@@ -7,7 +7,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/roberteggl/github-deployment-bridge
   pullPolicy: IfNotPresent
-  tag: ""
+  tag: "@sha256:53a78ebad3aa3c25ec4d8bcd839a32af0c3325c9c093cb3ec84bf98aafbd6261"
 
 imagePullSecrets: []
 nameOverride: ""
