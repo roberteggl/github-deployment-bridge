@@ -335,6 +335,18 @@ jobs:
         with:
           subject-path: ${{ steps.package.outputs.file }}
 
+      # Scorecard Signed-Releases only scores GitHub Release asset filenames
+      # (*.sigstore.json → signature, *.intoto.jsonl → SLSA provenance).
+      - name: Stage attestation bundles for GitHub Release
+        run: |
+          set -euo pipefail
+          chart="${{ steps.package.outputs.basename }}"
+          bundle="${{ steps.attest-chart.outputs.bundle-path }}"
+          test -n "${bundle}"
+          test -f "${bundle}"
+          cp "${bundle}" "dist/${chart}.sigstore.json"
+          cp "${bundle}" "dist/${chart}.intoto.jsonl"
+
       - name: Push chart OCI
         id: push
         run: |
@@ -357,7 +369,10 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: helm-chart
-          path: ${{ steps.package.outputs.file }}
+          path: |
+            dist/*.tgz
+            dist/*.sigstore.json
+            dist/*.intoto.jsonl
           retention-days: 30
 
   release:
@@ -398,6 +413,7 @@ jobs:
             echo
             echo "- Image signed with Sigstore keyless Cosign"
             echo "- GitHub Artifact Attestations (SLSA provenance) for image + Helm chart"
+            echo "- Release assets include the chart Sigstore bundle as \`.sigstore.json\` and \`.intoto.jsonl\` (same attestation; Scorecard Signed-Releases)"
             echo "- Attestations: https://github.com/${{ github.repository }}/attestations"
             if [ -n "${{ needs.merge-image.outputs.attestation-url }}" ]; then
               echo "- Image attestation: ${{ needs.merge-image.outputs.attestation-url }}"
@@ -418,7 +434,7 @@ jobs:
             echo "  oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-image.outputs.digest }} \\"
             echo "  --repo ${{ github.repository }}"
             echo
-            echo "gh attestation verify dist/github-deployment-bridge-${{ needs.changelog.outputs.version }}.tgz \\"
+            echo "gh attestation verify github-deployment-bridge-${{ needs.changelog.outputs.version }}.tgz \\"
             echo "  --repo ${{ github.repository }}"
             echo '```'
           } > RELEASE_BODY.md
@@ -431,4 +447,7 @@ jobs:
           body_path: RELEASE_BODY.md
           prerelease: ${{ needs.changelog.outputs.is_prerelease }}
           generate_release_notes: false
-          files: dist/*.tgz
+          files: |
+            dist/*.tgz
+            dist/*.sigstore.json
+            dist/*.intoto.jsonl

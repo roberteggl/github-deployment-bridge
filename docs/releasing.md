@@ -11,17 +11,19 @@ Releases are fully automated on `v*` tag push via
 
 ## Pipeline
 
-1. **Validate** — tidy, fmt, vet, race tests, build, Helm lint, chart/tag version match, REUSE
-2. **Changelog** — [git-cliff](https://git-cliff.org/) from Conventional Commits (`cliff.toml`)
-3. **Image** — native multi-arch build (no QEMU):
+1. **Validate** - tidy, fmt, vet, race tests, build, Helm lint, chart/tag version match, REUSE
+2. **Changelog** - [git-cliff](https://git-cliff.org/) from Conventional Commits (`cliff.toml`)
+3. **Image** - native multi-arch build (no QEMU):
    - `linux/amd64` on `ubuntu-24.04`
    - `linux/arm64` on `ubuntu-24.04-arm`
    - push-by-digest → merge manifest list on GHCR
    - BuildKit SBOM + provenance
    - Sigstore keyless Cosign signature
    - GitHub Artifact Attestation (SLSA provenance, pushed to GHCR)
-4. **Helm** — package chart, attest `.tgz` + OCI chart, push to `oci://ghcr.io/<owner>/charts`
-5. **GitHub Release** — cliff notes + verify commands (chart `.tgz` attached)
+4. **Helm** - package chart, attest `.tgz` + OCI chart, push to `oci://ghcr.io/<owner>/charts`
+5. **GitHub Release** - cliff notes + verify commands; attaches chart `.tgz` plus the
+   Sigstore attestation bundle as `.sigstore.json` and `.intoto.jsonl` (OpenSSF
+   Scorecard Signed-Releases looks at those release-asset extensions)
 
 Prerelease tags containing `-` (e.g. `v0.2.0-rc.1`) skip `latest` and major tags.
 
@@ -77,6 +79,17 @@ helm install github-deployment-bridge \
 
 Attestations appear under
 [github.com/roberteggl/github-deployment-bridge/attestations](https://github.com/roberteggl/github-deployment-bridge/attestations).
+
+Each GitHub Release also attaches the Helm chart Sigstore bundle next to the
+`.tgz` (same attestation, two Scorecard-recognized filenames):
+
+- `github-deployment-bridge-<version>.tgz.sigstore.json`
+- `github-deployment-bridge-<version>.tgz.intoto.jsonl`
+
+Prefer `gh attestation verify` against the chart (or Cosign against the image).
+The release-side copies exist so [OpenSSF Scorecard Signed-Releases](https://github.com/ossf/scorecard/blob/main/docs/checks.md#signed-releases)
+can see signature/provenance assets; Scorecard does not yet consume the GitHub
+Attestations API.
 
 ```bash
 # Cosign (image signature)
