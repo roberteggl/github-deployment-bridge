@@ -106,6 +106,10 @@ func TestAppClientCreateDeploymentAndStatus(t *testing.T) {
 	if gotDeployment["auto_merge"] != false {
 		t.Fatalf("auto_merge = %#v", gotDeployment["auto_merge"])
 	}
+	contexts, ok := gotDeployment["required_contexts"].([]any)
+	if !ok || len(contexts) != 0 {
+		t.Fatalf("required_contexts = %#v, want []", gotDeployment["required_contexts"])
+	}
 	if gotDeployment["production_environment"] != true {
 		t.Fatalf("production_environment = %#v", gotDeployment["production_environment"])
 	}
