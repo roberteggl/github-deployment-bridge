@@ -13,6 +13,7 @@ SPDX-License-Identifier: Apache-2.0
 | `WATCH_NAMESPACE` | no | _(all)_ | Limit Flux Kustomization / HelmRelease watch to one namespace |
 | `DATABASE` | no | `/data/cache.db` | SQLite path for duplicate prevention |
 | `ENVIRONMENT_URL` | no | | Default HTTPS URL on deployment statuses (overridable) |
+| `DESCRIPTION` | no | | Default GitHub Deployment description (overridable). Empty → `Deployed by FluxCD` |
 | `LOG_URL_TEMPLATE` | no | | Default log URL template (overridable). Placeholders: `{sha}`, `{namespace}`, `{name}`, `{service}`, `{environment}`, `{cluster}` |
 | `LOG_LEVEL` | no | `info` | slog level: `debug`, `info`, `warn`, or `error` |
 | `METRICS_ADDR` | no | `:8080` | Prometheus metrics + convenience probes |

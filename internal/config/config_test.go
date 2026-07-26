@@ -14,6 +14,7 @@ func TestLoadAndExpand(t *testing.T) {
 	t.Setenv("GITHUB_INSTALLATION_ID", "456")
 	t.Setenv("GITHUB_PRIVATE_KEY_PATH", "/tmp/key.pem")
 	t.Setenv("LOG_URL_TEMPLATE", "https://logs.example.com?commit={sha}")
+	t.Setenv("DESCRIPTION", "Deployed via GitOps")
 
 	cfg, err := config.Load()
 	if err != nil {
@@ -21,6 +22,9 @@ func TestLoadAndExpand(t *testing.T) {
 	}
 	if !cfg.IsProduction() {
 		t.Fatal("expected production")
+	}
+	if cfg.Description != "Deployed via GitOps" {
+		t.Fatalf("Description = %q, want Deployed via GitOps", cfg.Description)
 	}
 	if got := cfg.ExpandLogURL(config.LogURLVars{SHA: "abc"}); got != "https://logs.example.com?commit=abc" {
 		t.Fatalf("ExpandLogURL = %q", got)

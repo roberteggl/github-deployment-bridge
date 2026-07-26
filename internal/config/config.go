@@ -21,6 +21,7 @@ type Config struct {
 	WatchNamespace       string        `envconfig:"WATCH_NAMESPACE" default:""`
 	DatabasePath         string        `envconfig:"DATABASE" default:"/data/cache.db"`
 	EnvironmentURL       string        `envconfig:"ENVIRONMENT_URL"`
+	Description          string        `envconfig:"DESCRIPTION"`
 	LogURLTemplate       string        `envconfig:"LOG_URL_TEMPLATE"`
 	LogLevel             string        `envconfig:"LOG_LEVEL" default:"info"`
 	MetricsAddr          string        `envconfig:"METRICS_ADDR" default:":8080"`

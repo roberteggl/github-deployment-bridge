@@ -64,6 +64,8 @@ spec:
               value: /data/cache.db
             - name: ENVIRONMENT_URL
               value: {{ .Values.config.environmentURL | quote }}
+            - name: DESCRIPTION
+              value: {{ .Values.config.description | quote }}
             - name: LOG_URL_TEMPLATE
               value: {{ .Values.config.logURLTemplate | quote }}
             - name: LOG_LEVEL

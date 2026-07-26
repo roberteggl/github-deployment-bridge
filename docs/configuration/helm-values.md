@@ -12,6 +12,7 @@ SPDX-License-Identifier: Apache-2.0
 | `config.environment` | `ENVIRONMENT` |
 | `config.watchNamespace` | `WATCH_NAMESPACE` |
 | `config.environmentURL` | `ENVIRONMENT_URL` |
+| `config.description` | `DESCRIPTION` |
 | `config.logURLTemplate` | `LOG_URL_TEMPLATE` |
 | `config.logLevel` | `LOG_LEVEL` |
 | `config.leaderElection` | `LEADER_ELECTION` |

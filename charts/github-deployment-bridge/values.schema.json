@@ -182,6 +182,7 @@
         "environment": { "type": "string" },
         "watchNamespace": { "type": "string" },
         "environmentURL": { "type": "string" },
+        "description": { "type": "string" },
         "logURLTemplate": { "type": "string" },
         "logLevel": {
           "type": "string",

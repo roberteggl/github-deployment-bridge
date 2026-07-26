@@ -148,6 +148,7 @@ reference (env vars, Helm map, metrics, registries).
 | `config.environment` | `ENVIRONMENT` | GitHub deployment environment |
 | `config.watchNamespace` | `WATCH_NAMESPACE` | Limit to one namespace; empty = cluster-wide |
 | `config.environmentURL` | `ENVIRONMENT_URL` | Optional URL on deployment statuses |
+| `config.description` | `DESCRIPTION` | Optional default deployment description (default `Deployed by FluxCD`) |
 | `config.logURLTemplate` | `LOG_URL_TEMPLATE` | Optional log URL template (`{sha}`, `{namespace}`, `{name}`, `{service}`, `{environment}`, `{cluster}`) |
 | `config.logLevel` | `LOG_LEVEL` | `debug` / `info` / `warn` / `error` |
 | `config.githubBaseURL` | `GITHUB_BASE_URL` | GitHub Enterprise base URL |

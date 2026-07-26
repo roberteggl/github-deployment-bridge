@@ -409,7 +409,7 @@ func (r *Reporter) resolveImage(ctx context.Context, img WorkloadImage) (metadat
 		Cluster:        r.cfg.ClusterName,
 		Environment:    r.cfg.Environment,
 		EnvironmentURL: r.cfg.EnvironmentURL,
-		Description:    "Deployed by FluxCD",
+		Description:    r.cfg.Description,
 	})
 	if err != nil {
 		var skip *metadata.SkipError

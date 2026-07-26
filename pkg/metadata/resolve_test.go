@@ -31,7 +31,7 @@ func TestResolvePriorityAndDefaults(t *testing.T) {
 		Environment:    "staging",
 		EnvironmentURL: "https://staging.example.com",
 		LogURL:         "https://grafana.example.com/?sha=abcdef0123456789",
-		Description:    "Deployed by FluxCD",
+		Description:    "Cluster-wide Flux deploy",
 	})
 	if err != nil {
 		t.Fatalf("Resolve: %v", err)
@@ -56,6 +56,9 @@ func TestResolvePriorityAndDefaults(t *testing.T) {
 	}
 	if got.EnvironmentURL != "https://staging.example.com" {
 		t.Fatalf("environment-url = %s", got.EnvironmentURL)
+	}
+	if got.Description != "Cluster-wide Flux deploy" {
+		t.Fatalf("description = %s, want global default", got.Description)
 	}
 	if got.Cluster != "staging-cluster" {
 		t.Fatalf("cluster = %s, want staging-cluster", got.Cluster)
@@ -104,6 +107,28 @@ func TestResolveAnnotationOverrides(t *testing.T) {
 	}
 	if got.DeploymentName != "api" {
 		t.Fatalf("deployment-name = %s", got.DeploymentName)
+	}
+}
+
+func TestResolveDescriptionFallback(t *testing.T) {
+	t.Parallel()
+
+	oci := ocilabels.Metadata{
+		Source:   "https://github.com/example/backend",
+		Revision: "abcdef0123456789",
+	}
+	ann := map[string]string{
+		metadata.AnnotationAutoReport: "true",
+	}
+	got, err := metadata.Resolve(ann, oci, metadata.Defaults{
+		Cluster:     "staging-cluster",
+		Environment: "staging",
+	})
+	if err != nil {
+		t.Fatalf("Resolve: %v", err)
+	}
+	if got.Description != "Deployed by FluxCD" {
+		t.Fatalf("description = %s, want built-in fallback", got.Description)
 	}
 }
 

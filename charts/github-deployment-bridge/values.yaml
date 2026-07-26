@@ -138,6 +138,9 @@ config:
   environment: production
   watchNamespace: ""
   environmentURL: ""
+  # Optional default GitHub Deployment description (overridable per workload).
+  # Empty falls back to "Deployed by FluxCD".
+  description: ""
   # Optional GitHub Deployment Status log_url template. Placeholders:
   # {sha} {namespace} {name} {service} ({service} falls back to {name})
   # {environment} {cluster}. Per-workload annotation log-url overrides this
