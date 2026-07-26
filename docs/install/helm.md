@@ -118,7 +118,8 @@ your Prometheus `serviceMonitorSelector`).
 
 `/metrics` is unauthenticated HTTP. Restrict scrape peers with
 `networkPolicy.ingress.metricsFrom` when NetworkPolicy is enforced. Details:
-[Metrics](../configuration/metrics.md).
+[Metrics](../configuration/metrics.md). Official dashboard:
+[Grafana](../operations/grafana.md).
 
 ### PrometheusRule (optional)
 

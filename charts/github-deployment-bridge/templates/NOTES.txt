@@ -32,6 +32,7 @@ NetworkPolicy: enabled (metrics/probes ingress on container ports
 
 ServiceMonitor: enabled (Prometheus Operator scrapes port metrics → /metrics).
   /metrics is unauthenticated; restrict scrapers with networkPolicy.ingress.metricsFrom.
+  Grafana: https://deployment-bridge.eggl.dev/operations/grafana
 {{- end }}
 {{- if .Values.prometheusRule.enabled }}
 

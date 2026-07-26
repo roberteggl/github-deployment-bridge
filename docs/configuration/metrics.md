@@ -56,3 +56,9 @@ Optional `prometheusRule.enabled` ships four alerts (NotReady, bridge errors,
 GitHub API failures, GitHub API p99 latency). Enable alongside ServiceMonitor
 and match `prometheusRule.labels` to your Prometheus `ruleSelector`. Triage:
 [Runbook](../operations/runbook.md).
+
+## Grafana
+
+Official dashboard JSON:
+[`deploy/grafana/github-deployment-bridge.json`](https://github.com/roberteggl/github-deployment-bridge/blob/main/deploy/grafana/github-deployment-bridge.json).
+Import steps and variables: [Grafana dashboard](../operations/grafana.md).

@@ -27,6 +27,8 @@ annotations:
   artifacthub.io/links: |
     - name: Documentation
       url: https://deployment-bridge.eggl.dev/
+    - name: Grafana dashboard
+      url: https://deployment-bridge.eggl.dev/operations/grafana
     - name: Artifact Hub
       url: https://artifacthub.io/packages/helm/github-deployment-bridge/github-deployment-bridge
     - name: support

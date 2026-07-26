@@ -8,6 +8,7 @@ SPDX-License-Identifier: Apache-2.0
 
 Triage steps for the optional Helm `prometheusRule` alerts and related
 operational failures. Metrics reference: [Metrics](../configuration/metrics.md).
+Dashboard: [Grafana](./grafana.md).
 
 Enable rules with Prometheus Operator:
 

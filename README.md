@@ -97,7 +97,11 @@ Metrics include `deployments_created_total`, `deployment_status_updates_total`, 
 
 Helm: optional `serviceMonitor.enabled` / `prometheusRule.enabled` for Prometheus
 Operator; restrict scrape peers with `networkPolicy` + `metricsFrom`
-([Metrics](docs/configuration/metrics.md), [Runbook](docs/operations/runbook.md)).
+([Metrics](docs/configuration/metrics.md), [Grafana](docs/operations/grafana.md),
+[Runbook](docs/operations/runbook.md)).
+
+Official Grafana dashboard:
+[`deploy/grafana/github-deployment-bridge.json`](deploy/grafana/github-deployment-bridge.json).
 
 Image: `ghcr.io/roberteggl/github-deployment-bridge:<version>` (multi-arch `amd64`/`arm64`, Cosign-signed, SLSA-attested).
 

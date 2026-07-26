@@ -44,6 +44,7 @@ that namespace (plus a lease `Role` in the release namespace) instead of a
 
 `/metrics` is unauthenticated HTTP. Pair `serviceMonitor.enabled` with
 `networkPolicy` + `metricsFrom` when the CNI enforces NetworkPolicy. See
-[Metrics](./metrics.md). Alert triage: [Runbook](../operations/runbook.md).
+[Metrics](./metrics.md). Dashboard: [Grafana](../operations/grafana.md).
+Alert triage: [Runbook](../operations/runbook.md).
 
 Full install examples: [Install with Helm](../install/helm.md).
