@@ -57,6 +57,9 @@ LABEL org.opencontainers.image.source="https://github.com/example/backend" \
 
 Full precedence and annotation list:
 [Metadata resolution](../architecture.md#metadata-resolution).
+GitHub UI visibility and monorepo options (`deployment-name` vs environments):
+[GitHub Deployment mapping](../architecture.md#github-deployment-mapping) ·
+[Monorepos](../architecture.md#monorepos).
 
 ## Steps
 

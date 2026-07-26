@@ -10,7 +10,8 @@ SQLite at `DATABASE` (chart: `/data/cache.db`) stores
 `(owner, repo, environment, commitSHA, deploymentName)`, the GitHub
 `deployment_id`, and the latest status so reconciles stay idempotent across
 restarts (including monorepo workloads with distinct `deployment-name`
-annotations).
+annotations). For UI-friendly monorepo setups, prefer distinct `environment`
+values — see [Architecture → Monorepos](../architecture.md#monorepos).
 
 | Helm value | Default | Description |
 |---|---|---|

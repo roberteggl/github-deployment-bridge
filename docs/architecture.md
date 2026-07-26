@@ -122,15 +122,15 @@ Prefix: `github-deployment-bridge.io/`
 | `description` | default text | Deployment description |
 | `production` | derived from env name | `production_environment` (`true`/`false`) |
 | `auto-report` | _(none)_ | **Opt-in.** Must be `true` to report; absent/`false` ignores the workload (no OCI fetch, no warning spam) |
-| `deployment-name` | repository name | Independent reports for monorepo workloads (also GitHub `task`) |
-| `cluster` | `CLUSTER_NAME` | Deployment payload `cluster` |
-| `team` | _(none)_ | Deployment payload `team` |
-| `service` | _(none)_ | Deployment payload `service` |
-| `component` | _(none)_ | Deployment payload `component` |
-| `slack-channel` | _(none)_ | Deployment payload `slackChannel` |
-| `owner` | _(none)_ | Deployment payload `owner` (service owner, not GitHub repo owner) |
-| `release` | _(none)_ | Deployment payload `release` |
-| `tag` | _(none)_ | Deployment payload `tag` |
+| `deployment-name` | repository name | Independent reports for monorepo workloads (also GitHub `task`; see [Monorepos](#monorepos)) |
+| `cluster` | `CLUSTER_NAME` | Deployment payload `cluster` (API only) |
+| `team` | _(none)_ | Deployment payload `team` (API only) |
+| `service` | _(none)_ | Deployment payload `service` (API only) |
+| `component` | _(none)_ | Deployment payload `component` (API only) |
+| `slack-channel` | _(none)_ | Deployment payload `slackChannel` (API only) |
+| `owner` | _(none)_ | Deployment payload `owner` (service owner, not GitHub repo owner; API only) |
+| `release` | _(none)_ | Deployment payload `release` (API only) |
+| `tag` | _(none)_ | Deployment payload `tag` (API only) |
 
 ### Validation
 
@@ -145,22 +145,29 @@ Missing or invalid required metadata → skip reporting and emit a warning. Neve
 
 ### GitHub Deployment mapping
 
-| Resolved field | GitHub field |
-|---|---|
-| Repository | Deployment repository |
-| Commit | Deployment `ref` |
-| Environment | Deployment `environment` |
-| Production | `production_environment` |
-| Description | Deployment `description` |
-| Deployment name (when annotated) | Deployment `task` |
-| Environment URL | Status `environment_url` |
-| Log URL | Status `log_url` |
+| Resolved field | GitHub field | Visible in GitHub UI |
+|---|---|---|
+| Repository | Deployment repository | yes |
+| Commit | Deployment `ref` | yes |
+| Environment | Deployment `environment` | yes |
+| Production | `production_environment` | yes (Environments) |
+| Description | Deployment `description` | yes |
+| Deployment name (when annotated) | Deployment `task` | no (API / webhooks only) |
+| Environment URL | Status `environment_url` | yes |
+| Log URL | Status `log_url` | yes |
 
 Deployment `payload` includes `cluster`, `namespace` (workload), `sourceNamespace` (Flux
 Kustomization / HelmRelease namespace), source name (`kustomization` / `helmRelease`),
 `deploymentName`, `image`, optional `digest` / `version`, `controllerVersion`, and any
 optional annotation fields (`team`, `service`, `component`, `slackChannel`, `owner`,
 `release`, `tag`). The `cluster` annotation overrides the controller `CLUSTER_NAME` env.
+
+**GitHub UI does not render custom payload fields.** Values such as `team`, `service`,
+`component`, `slackChannel`, `owner`, `release`, `tag`, and `cluster` are stored on the
+Deployment and returned by the API / webhooks for integrations — they do not appear as
+labels in the repository Deployments page. Prefer `environment`, `description`, or
+`environment-url` when you need something visible in the UI.
+
 Crash recovery also matches older payloads that used the Flux source namespace as
 `namespace` and omitted `sourceNamespace`.
 
@@ -170,3 +177,36 @@ commit reaches `success` for the same identity (`deploymentName` included), the 
 explicitly marks prior cached `success` deployments `inactive`.
 
 Deduplication cache key: `(owner, repo, environment, commitSHA, deploymentName)`. Before creating a Deployment, the bridge writes a provisional cache row (`deployment_id=0`). It then searches GitHub for an existing Deployment with the same ref, environment, and payload (crash recovery) and only creates when none is found. The resolved `deployment_id` is persisted before status updates.
+
+### Monorepos
+
+When multiple workloads in one GitHub repository should report independently (for example
+frontend and backend), you have two options:
+
+| Approach | Annotation | Multiple active deployments | GitHub UI |
+|---|---|---|---|
+| Distinct deployment names | `deployment-name` (`frontend` / `backend`) | yes — cache identity includes `deploymentName`; bridge supersedes only within that name | Weak — `task` / name is not shown as a first-class label; both appear under the same environment |
+| Distinct environments | `environment` (`production-frontend` / `production-backend`) | yes — environments are independent | Best — each environment is listed separately with its own active deployment |
+
+**Recommendation:** use different `environment` values for the best Deployments UI
+experience. Use `deployment-name` when you want independent tracking (and correct
+active supersession) while keeping a shared environment name; combine both when useful
+(`environment` for UI grouping, `deployment-name` for API identity).
+
+Without `deployment-name`, both workloads default to the repository name and share one
+cache identity — only one active deployment is tracked for that key.
+
+```yaml
+# Best UI: separate environments
+metadata:
+  annotations:
+    github-deployment-bridge.io/auto-report: "true"
+    github-deployment-bridge.io/environment: "production-frontend"
+    github-deployment-bridge.io/deployment-name: "frontend"
+---
+metadata:
+  annotations:
+    github-deployment-bridge.io/auto-report: "true"
+    github-deployment-bridge.io/environment: "production-backend"
+    github-deployment-bridge.io/deployment-name: "backend"
+```
