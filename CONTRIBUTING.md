@@ -42,17 +42,35 @@ Useful targets: `make lint`, `make govulncheck`, `make vet`, `make helm-lint`,
 ### Commit messages
 
 Use [Conventional Commits](https://www.conventionalcommits.org/) so
-[git-cliff](https://git-cliff.org/) can generate release notes:
+[git-cliff](https://git-cliff.org/) can group release notes by **type**. Format:
+`<type>(optional-scope): <description>`.
+
+**Always put the change kind in the type**, never as the scope. git-cliff matches
+`^feat`, `^fix`, `^doc`, … — so `fix(docs): …` lands under **Bug Fixes**, not
+**Documentation**.
 
 ```text
-feat: report deployment failures when Ready=False
-fix: skip workloads with missing metadata
-docs: clarify GitHub App permissions
+feat(github): report deployment failures when Ready=False
+fix(cache): skip workloads with missing metadata
+docs(install): clarify GitHub App permissions
 ci: pin Scorecard action digest
 chore(deps): update controller-runtime
 ```
 
-Common types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `ci`, `chore`.
+| Kind of change | Type |
+|---|---|
+| New user-facing capability | `feat` |
+| Bug fix in product code | `fix` |
+| Docs / README / comments only | `docs` |
+| CI / workflows | `ci` |
+| Tests only | `test` |
+| Internal restructure (no behavior change) | `refactor` |
+| Perf | `perf` |
+| Build, release prep, tooling, deps | `chore` |
+
+Scope (if used) is an **area** (`github`, `cache`, `install`, `helm`, …), not
+another type name. Prefer the most specific type that fits — use `docs:` for
+doc-only changes, not `fix(docs):` or `chore(docs):`.
 
 ### DCO sign-off (required)
 

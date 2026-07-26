@@ -238,7 +238,6 @@ jobs:
     outputs:
       image: ${{ steps.meta.outputs.tags }}
       digest: ${{ steps.digest.outputs.digest }}
-      attestation-url: ${{ steps.attest-image.outputs.attestation-url }}
     steps:
       - name: Download digests
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -335,7 +334,6 @@ jobs:
     outputs:
       package: ${{ steps.package.outputs.file }}
       digest: ${{ steps.push.outputs.digest }}
-      attestation-url: ${{ steps.attest-chart.outputs.attestation-url }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -468,44 +466,10 @@ jobs:
             echo
             echo "## Artifacts"
             echo
-            echo "- Container image: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.changelog.outputs.version }}\`"
-            echo "- Image digest: \`${{ needs.merge-image.outputs.digest }}\`"
-            echo "- Helm chart (OCI): \`oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts/github-deployment-bridge:${{ needs.changelog.outputs.version }}\`"
-            echo "- Chart digest: \`${{ needs.helm.outputs.digest }}\`"
+            echo "- Image: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.changelog.outputs.version }}\` (\`${{ needs.merge-image.outputs.digest }}\`)"
+            echo "- Helm: \`oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts/github-deployment-bridge:${{ needs.changelog.outputs.version }}\` (\`${{ needs.helm.outputs.digest }}\`)"
             echo
-            echo "## Supply chain"
-            echo
-            echo "- Image + Helm chart signed with Sigstore keyless Cosign (legacy \`.sig\` tags for Artifact Hub)"
-            echo "- GitHub Artifact Attestations (SLSA provenance) for image + Helm chart"
-            echo "- Release assets include the chart Sigstore bundle as \`.sigstore.json\` and \`.intoto.jsonl\` (same attestation; Scorecard Signed-Releases)"
-            echo "- Attestations: https://github.com/${{ github.repository }}/attestations"
-            if [ -n "${{ needs.merge-image.outputs.attestation-url }}" ]; then
-              echo "- Image attestation: ${{ needs.merge-image.outputs.attestation-url }}"
-            fi
-            if [ -n "${{ needs.helm.outputs.attestation-url }}" ]; then
-              echo "- Chart attestation: ${{ needs.helm.outputs.attestation-url }}"
-            fi
-            echo
-            echo "Verify:"
-            echo
-            echo '```bash'
-            echo "cosign verify \\"
-            echo "  --certificate-identity-regexp='https://github.com/${{ github.repository }}/.*' \\"
-            echo "  --certificate-oidc-issuer=https://token.actions.githubusercontent.com \\"
-            echo "  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.changelog.outputs.version }}"
-            echo
-            echo "cosign verify \\"
-            echo "  --certificate-identity-regexp='https://github.com/${{ github.repository }}/.*' \\"
-            echo "  --certificate-oidc-issuer=https://token.actions.githubusercontent.com \\"
-            echo "  ${{ env.REGISTRY }}/${{ github.repository_owner }}/charts/github-deployment-bridge:${{ needs.changelog.outputs.version }}"
-            echo
-            echo "gh attestation verify \\"
-            echo "  oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.merge-image.outputs.digest }} \\"
-            echo "  --repo ${{ github.repository }}"
-            echo
-            echo "gh attestation verify github-deployment-bridge-${{ needs.changelog.outputs.version }}.tgz \\"
-            echo "  --repo ${{ github.repository }}"
-            echo '```'
+            echo "Cosign keyless + SLSA attestations — [verify](https://github.com/${{ github.repository }}/blob/main/docs/releasing.md#verify-signatures-and-attestations) · [attestations](https://github.com/${{ github.repository }}/attestations)"
           } > RELEASE_BODY.md
 
       - name: Create GitHub Release

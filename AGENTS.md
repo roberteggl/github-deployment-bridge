@@ -64,9 +64,37 @@ EOF
 Do not use `--no-gpg-sign` / `--no-verify` unless the user explicitly asks.
 Do not commit unless the user asks. Push only when requested.
 
-Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`,
-`fix:`, `docs:`, `ci:`, …) so [git-cliff](https://git-cliff.org/) can generate
-release notes.
+### Conventional Commits (type is required; scope is optional)
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) so
+[git-cliff](https://git-cliff.org/) (`cliff.toml`) can group release notes by
+**type**. Format: `<type>(optional-scope): <description>`.
+
+**Always put the change kind in the type**, never as the scope. git-cliff
+matches `^feat`, `^fix`, `^doc`, … — so `fix(docs): …` lands under **Bug Fixes**
+(with a `docs` scope label), not under **Documentation**.
+
+| Kind of change | Type | Example |
+|---|---|---|
+| New user-facing capability | `feat` | `feat(github): mark prior deployments inactive` |
+| Bug fix in product code | `fix` | `fix(cache): reuse provisional deployment row` |
+| Docs / README / comments only | `docs` | `docs(install): clarify GitHub App permissions` |
+| CI / workflows | `ci` | `ci: pin Scorecard action digest` |
+| Tests only | `test` | `test(reconciler): cover Ready=False failure` |
+| Internal restructure (no behavior change) | `refactor` | `refactor(oci): simplify label merge` |
+| Perf | `perf` | `perf(inventory): skip duplicate image lookups` |
+| Build, release prep, tooling, deps | `chore` | `chore(deps): update controller-runtime` |
+
+Rules:
+
+- Prefer the most specific type that fits (`docs` for doc-only; `fix` only when
+  fixing a product bug).
+- Scope (if used) is an **area** (`github`, `cache`, `install`, `helm`, …), not
+  another type name.
+- **Wrong:** `fix(docs): …`, `feat(ci): …`, `chore(docs): …` when the change is
+  really docs/CI — those pollute the wrong changelog section.
+- **Right:** `docs: …`, `docs(install): …`, `ci: …`, `fix(github): …`.
+- Do not invent types outside the table above unless the user asks.
 
 ## OpenSSF Scorecard
 
