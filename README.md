@@ -6,7 +6,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # GitHub Deployment Bridge
 
-[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-0b1020)](https://roberteggl.github.io/github-deployment-bridge/)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-0b1020)](https://deployment-bridge.eggl.dev/)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/github-deployment-bridge)](https://artifacthub.io/packages/helm/github-deployment-bridge/github-deployment-bridge)
 [![REUSE status](https://api.reuse.software/badge/github.com/roberteggl/github-deployment-bridge)](https://api.reuse.software/info/github.com/roberteggl/github-deployment-bridge)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/roberteggl/github-deployment-bridge/badge)](https://scorecard.dev/viewer/?uri=github.com/roberteggl/github-deployment-bridge)
@@ -48,7 +48,7 @@ Prefix: `github-deployment-bridge.io/`. Workloads must set `auto-report=true` to
 ## Install
 
 Full guide (GitHub App permissions, secrets, PVC, Helm values, verify):
-**[Install](https://roberteggl.github.io/github-deployment-bridge/install/)** · [docs/install/](docs/install/).
+**[Install](https://deployment-bridge.eggl.dev/install/)** · [docs/install/](docs/install/).
 
 Quick start with an existing Secret:
 
