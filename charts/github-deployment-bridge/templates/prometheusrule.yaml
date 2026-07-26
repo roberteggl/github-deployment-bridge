@@ -5,7 +5,7 @@
 {{- if .Values.prometheusRule.enabled }}
 {{- $fullname := include "github-deployment-bridge.fullname" . -}}
 {{- $ns := .Release.Namespace -}}
-{{- $runbook := .Values.prometheusRule.runbookURL | default "https://roberteggl.github.io/github-deployment-bridge/operations/runbook" -}}
+{{- $runbook := .Values.prometheusRule.runbookURL | default "https://deployment-bridge.eggl.dev/operations/runbook" -}}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:

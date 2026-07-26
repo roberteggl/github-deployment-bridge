@@ -36,7 +36,7 @@ ServiceMonitor: enabled (Prometheus Operator scrapes port metrics → /metrics).
 {{- if .Values.prometheusRule.enabled }}
 
 PrometheusRule: enabled (NotReady, bridge errors, GitHub API failures/latency).
-  Triage: https://roberteggl.github.io/github-deployment-bridge/operations/runbook
+  Triage: https://deployment-bridge.eggl.dev/operations/runbook
 {{- end }}
 
 Ensure your container images include OCI labels:
