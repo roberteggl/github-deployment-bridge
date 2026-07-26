@@ -181,6 +181,49 @@ jobs:
           echo "${out}" | grep -q 'alert: GitHubDeploymentBridgeErrors'
           echo "${out}" | grep -q 'port: metrics'
           echo "${out}" | grep -q 'release: kube-prometheus-stack'
+          # Regression: {{- … -}} before apiVersion must not glue SPDX onto the field,
+          # and disabled templates must not emit comment-only YAML documents.
+          if echo "${out}" | grep -q 'Apache-2.0apiVersion'; then
+            echo "SPDX comment glued onto apiVersion (Helm whitespace trim bug)"
+            exit 1
+          fi
+          echo "${out}" | awk '
+            BEGIN { doc=""; n=0 }
+            /^---$/ {
+              if (n++) check(doc)
+              doc=""
+              next
+            }
+            { doc = doc $0 "\n" }
+            END { check(doc) }
+            function check(d,   has_api, has_kind, line, emptyish) {
+              gsub(/\r/, "", d)
+              emptyish = 1
+              has_api = 0
+              has_kind = 0
+              split(d, lines, "\n")
+              for (i in lines) {
+                line = lines[i]
+                sub(/^[[:space:]]+/, "", line)
+                if (line == "" || line ~ /^#/) continue
+                emptyish = 0
+                if (line ~ /^apiVersion:/) has_api = 1
+                if (line ~ /^kind:/) has_kind = 1
+              }
+              if (emptyish) return
+              if (!has_api || !has_kind) {
+                print "document missing apiVersion/kind:" > "/dev/stderr"
+                print d > "/dev/stderr"
+                exit 1
+              }
+            }
+          '
+          echo "${out}" | awk '
+            /apiVersion: monitoring.coreos.com\/v1/ { api=1; next }
+            api && /^kind: PrometheusRule$/ { found=1; exit }
+            /^---$/ { api=0 }
+            END { if (!found) { print "expected PrometheusRule with apiVersion monitoring.coreos.com/v1" > "/dev/stderr"; exit 1 } }
+          '
           echo "${out}" | grep -q 'name: RETRY_MAX_ATTEMPTS'
           echo "${out}" | grep -q 'value: "8"'
           echo "${out}" | grep -q 'name: RETRY_INITIAL_BACKOFF'

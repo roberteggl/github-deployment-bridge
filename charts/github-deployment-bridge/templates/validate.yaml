@@ -1,7 +1,8 @@
-# SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev>
-#
-# SPDX-License-Identifier: Apache-2.0
+{{- /*
+SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev>
 
+SPDX-License-Identifier: Apache-2.0
+*/ -}}
 {{- if and .Values.persistence.enabled (gt (int .Values.replicaCount) 1) }}
 {{- fail (printf "github-deployment-bridge: replicaCount=%d with persistence.enabled=true is unsupported. The SQLite deduplication cache at /data/cache.db allows only one writer (even with ReadWriteMany). Set replicaCount: 1 (production default) or disable persistence only for ephemeral dev clusters. Multi-replica HA would require a shared database backend; this chart intentionally stays single-writer." (int .Values.replicaCount)) }}
 {{- end }}

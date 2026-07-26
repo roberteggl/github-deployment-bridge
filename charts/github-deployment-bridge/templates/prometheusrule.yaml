@@ -1,11 +1,10 @@
+{{- if .Values.prometheusRule.enabled }}
+{{- $fullname := include "github-deployment-bridge.fullname" . }}
+{{- $ns := .Release.Namespace }}
+{{- $runbook := .Values.prometheusRule.runbookURL | default "https://deployment-bridge.eggl.dev/operations/runbook" }}
 # SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev>
 #
 # SPDX-License-Identifier: Apache-2.0
-
-{{- if .Values.prometheusRule.enabled }}
-{{- $fullname := include "github-deployment-bridge.fullname" . -}}
-{{- $ns := .Release.Namespace -}}
-{{- $runbook := .Values.prometheusRule.runbookURL | default "https://deployment-bridge.eggl.dev/operations/runbook" -}}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:

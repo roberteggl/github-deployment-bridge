@@ -1,8 +1,7 @@
+{{- if .Values.networkPolicy.enabled }}
 # SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev>
 #
 # SPDX-License-Identifier: Apache-2.0
-
-{{- if .Values.networkPolicy.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

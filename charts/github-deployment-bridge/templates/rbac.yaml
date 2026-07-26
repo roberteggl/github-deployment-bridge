@@ -1,13 +1,12 @@
-# SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev>
-#
-# SPDX-License-Identifier: Apache-2.0
-
 {{- if .Values.rbac.create }}
 {{- $watchNS := .Values.config.watchNamespace | default "" }}
 {{- $clusterWatch := eq $watchNS "" }}
 {{- /* Watch / inventory rules: ClusterRole when watching all namespaces,
        namespaced Role in config.watchNamespace otherwise.
        Leader-election leases always use a Role in the release namespace. */}}
+# SPDX-FileCopyrightText: 2026 Robert Eggl <robert@eggl.dev>
+#
+# SPDX-License-Identifier: Apache-2.0
 {{- if $clusterWatch }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
