@@ -380,6 +380,22 @@ html.rp-dark .rp-button--brand:hover {
 }
 
 /* Feature cards: sharp, quiet, accent on hover */
+.rp-home-feature {
+  padding: 1.25rem 1.25rem 2rem;
+}
+
+@media (width >= 640px) {
+  .rp-home-feature {
+    padding: 1rem 1.5rem 2rem;
+  }
+}
+
+@media (width >= 960px) {
+  .rp-home-feature {
+    padding: 10px 1.5rem 2rem;
+  }
+}
+
 .rp-home-feature__card {
   backdrop-filter: none !important;
   background: var(--rp-home-feature-bg) !important;
