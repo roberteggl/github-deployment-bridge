@@ -267,10 +267,6 @@ html.rp-dark {
   animation: gdb-status-pulse 3.6s ease-in-out 2.4s infinite;
 }
 
-.gdb-hero-graphic__live {
-  animation: gdb-live-blink 1.8s ease-in-out infinite;
-}
-
 .rp-home-hero__image {
   flex: 1.05;
   max-width: min(52vw, 36rem);
@@ -324,22 +320,11 @@ html.rp-dark {
   }
 }
 
-@keyframes gdb-live-blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.35;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .gdb-hero-graphic,
   .gdb-hero-graphic__rail,
   .gdb-hero-graphic__ring,
   .gdb-hero-graphic__status circle,
-  .gdb-hero-graphic__live,
   .gdb-hero-graphic__packet {
     animation: none !important;
   }

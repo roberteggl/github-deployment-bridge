@@ -350,18 +350,6 @@ export function HeroBridgeGraphic() {
           >
             owner/repo · production · abc1234
           </text>
-          <g transform="translate(420 336)">
-            <circle className="gdb-hero-graphic__live" r="5" fill="#4db5ae" />
-            <text
-              x="14"
-              y="4"
-              className="gdb-hero-graphic__mono"
-              fill="#e8ebe8"
-              fontSize="12"
-            >
-              live
-            </text>
-          </g>
         </g>
       </svg>
     </div>
