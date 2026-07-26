@@ -129,15 +129,15 @@ func TestAppClientCreateDeploymentAndStatus(t *testing.T) {
 		DeploymentID: dep.ID,
 		State:        "success",
 		Description:  "Deployment completed successfully.",
-		AutoInactive: true,
+		AutoInactive: false,
 	}); err != nil {
 		t.Fatalf("CreateDeploymentStatus: %v", err)
 	}
 	if gotStatus["state"] != "success" {
 		t.Fatalf("status state = %#v", gotStatus["state"])
 	}
-	if gotStatus["auto_inactive"] != true {
-		t.Fatalf("auto_inactive = %#v", gotStatus["auto_inactive"])
+	if gotStatus["auto_inactive"] != false {
+		t.Fatalf("auto_inactive = %#v, want false", gotStatus["auto_inactive"])
 	}
 }
 

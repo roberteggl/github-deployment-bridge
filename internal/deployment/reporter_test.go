@@ -140,8 +140,8 @@ func TestReporterCatchUpSuccessAndSkipsDuplicates(t *testing.T) {
 	if g.statuses[0].State != "success" {
 		t.Fatalf("status state = %q", g.statuses[0].State)
 	}
-	if !g.statuses[0].AutoInactive {
-		t.Fatal("expected auto_inactive=true")
+	if g.statuses[0].AutoInactive {
+		t.Fatal("expected auto_inactive=false (monorepo-safe; bridge supersedes explicitly)")
 	}
 	if g.deployments[0].Payload["cluster"] != "production-eu" {
 		t.Fatalf("payload cluster = %#v", g.deployments[0].Payload["cluster"])
@@ -386,6 +386,80 @@ func TestReporterInactiveSupersession(t *testing.T) {
 	}
 	if inactiveCount != 1 {
 		t.Fatalf("expected 1 inactive status, got %#v", states)
+	}
+}
+
+func TestReporterMonorepoSiblingNotSuperseded(t *testing.T) {
+	t.Parallel()
+
+	store, err := cache.Open(filepath.Join(t.TempDir(), "cache.db"))
+	if err != nil {
+		t.Fatalf("open cache: %v", err)
+	}
+	t.Cleanup(func() { _ = store.Close() })
+
+	cfg := config.Config{ClusterName: "c", Environment: "production"}
+	g := &fakeGitHub{}
+	reg := &fakeRegistry{meta: ocilabels.Metadata{
+		Source:   "https://github.com/example/monorepo",
+		Revision: "aaaaaaaaaaaaaaaa",
+	}}
+	r := deployment.NewReporter(cfg, store, reg, g, nil, slog.Default(), "test")
+
+	frontend := deployment.ReportInput{
+		Namespace:  "apps",
+		SourceKind: "Kustomization",
+		SourceName: "apps",
+		Phase:      deployment.PhaseSuccess,
+		Images: []deployment.WorkloadImage{{
+			Namespace: "apps",
+			Kind:      "Deployment",
+			Name:      "frontend",
+			Image:     "ghcr.io/example/frontend:v1",
+			Annotations: map[string]string{
+				metadata.AnnotationAutoReport:     "true",
+				metadata.AnnotationDeploymentName: "frontend",
+			},
+		}},
+	}
+	backend := deployment.ReportInput{
+		Namespace:  "apps",
+		SourceKind: "Kustomization",
+		SourceName: "apps",
+		Phase:      deployment.PhaseSuccess,
+		Images: []deployment.WorkloadImage{{
+			Namespace: "apps",
+			Kind:      "Deployment",
+			Name:      "backend",
+			Image:     "ghcr.io/example/backend:v1",
+			Annotations: map[string]string{
+				metadata.AnnotationAutoReport:     "true",
+				metadata.AnnotationDeploymentName: "backend",
+			},
+		}},
+	}
+
+	if err := r.Report(context.Background(), frontend); err != nil {
+		t.Fatalf("frontend: %v", err)
+	}
+	reg.meta.Revision = "bbbbbbbbbbbbbbbb"
+	if err := r.Report(context.Background(), backend); err != nil {
+		t.Fatalf("backend: %v", err)
+	}
+
+	if len(g.deployments) != 2 {
+		t.Fatalf("deployments = %d, want 2", len(g.deployments))
+	}
+	for i, s := range g.statuses {
+		if s.AutoInactive {
+			t.Fatalf("status[%d] auto_inactive=true; must be false for monorepo safety", i)
+		}
+		if s.State == "inactive" {
+			t.Fatalf("unexpected inactive status (sibling must stay active): %#v", statusStates(g))
+		}
+	}
+	if len(g.statuses) != 2 {
+		t.Fatalf("statuses = %#v, want 2 success", statusStates(g))
 	}
 }
 

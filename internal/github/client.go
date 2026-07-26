@@ -46,7 +46,9 @@ type DeploymentStatusRequest struct {
 	EnvironmentURL string
 	LogURL         string
 	Description    string
-	// AutoInactive marks previous successful deployments in the same environment inactive.
+	// AutoInactive asks GitHub to mark prior successes in the same environment
+	// inactive. Leave false for monorepo workloads that share an environment but
+	// use distinct deployment-name values; the bridge supersedes via markPriorInactive.
 	AutoInactive bool
 }
 

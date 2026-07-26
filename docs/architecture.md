@@ -164,6 +164,9 @@ optional annotation fields (`team`, `service`, `component`, `slackChannel`, `own
 Crash recovery also matches older payloads that used the Flux source namespace as
 `namespace` and omitted `sourceNamespace`.
 
-Status updates set `auto_inactive=true`. When a newer commit reaches `success` for the same identity, prior cached `success` deployments are explicitly marked `inactive`.
+Status updates set `auto_inactive=false`. GitHub's environment-scoped auto-inactive would
+otherwise deactivate sibling monorepo deployments that share an environment. When a newer
+commit reaches `success` for the same identity (`deploymentName` included), the bridge
+explicitly marks prior cached `success` deployments `inactive`.
 
 Deduplication cache key: `(owner, repo, environment, commitSHA, deploymentName)`. Before creating a Deployment, the bridge writes a provisional cache row (`deployment_id=0`). It then searches GitHub for an existing Deployment with the same ref, environment, and payload (crash recovery) and only creates when none is found. The resolved `deployment_id` is persisted before status updates.

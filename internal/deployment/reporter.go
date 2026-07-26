@@ -567,6 +567,10 @@ func (r *Reporter) createDeployment(
 }
 
 func (r *Reporter) emitStatus(ctx context.Context, resolved metadata.Resolved, deploymentID int64, state Phase) error {
+	// AutoInactive must stay false: GitHub's auto_inactive is environment-scoped
+	// and would deactivate sibling monorepo deployments (distinct deployment-name /
+	// task) that share the same environment. Supersession is handled explicitly by
+	// markPriorInactive, which is scoped to the cache identity including deploymentName.
 	if err := r.github.CreateDeploymentStatus(ctx, gh.DeploymentStatusRequest{
 		Owner:          resolved.Repo.Owner,
 		Repo:           resolved.Repo.Name,
@@ -575,7 +579,7 @@ func (r *Reporter) emitStatus(ctx context.Context, resolved metadata.Resolved, d
 		EnvironmentURL: resolved.EnvironmentURL,
 		LogURL:         resolved.LogURL,
 		Description:    StatusDescription(state),
-		AutoInactive:   true,
+		AutoInactive:   false,
 	}); err != nil {
 		return fmt.Errorf("create github deployment status: %w", err)
 	}
@@ -645,7 +649,7 @@ func (r *Reporter) tryReportError(ctx context.Context, in ReportInput, img Workl
 	}
 	existing, err := r.cache.Get(ctx, key)
 	if err != nil || existing == nil || existing.DeploymentID == 0 {
-		// No deployment to update — this path only applies after create.
+		// No deployment to update - this path only applies after create.
 		return nil
 	}
 	current := Phase(existing.Status)
