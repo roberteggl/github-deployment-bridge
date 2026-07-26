@@ -138,6 +138,10 @@ config:
   environment: production
   watchNamespace: ""
   environmentURL: ""
+  # Optional GitHub Deployment Status log_url template. Placeholders:
+  # {sha} {namespace} {name} {service} ({service} falls back to {name})
+  # {environment} {cluster}. Per-workload annotation log-url overrides this
+  # and supports the same placeholders.
   logURLTemplate: ""
   # slog level: debug | info | warn | error
   logLevel: info

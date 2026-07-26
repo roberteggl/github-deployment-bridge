@@ -88,10 +88,39 @@ func (c Config) IsProduction() bool {
 	return strings.EqualFold(c.Environment, "production")
 }
 
-// ExpandLogURL substitutes {sha} in the log URL template.
-func (c Config) ExpandLogURL(sha string) string {
-	if c.LogURLTemplate == "" {
+// LogURLVars are placeholders for ExpandLogURL / ExpandLogURLTemplate.
+type LogURLVars struct {
+	SHA         string // {sha} — commit SHA
+	Namespace   string // {namespace} — workload namespace
+	Name        string // {name} — workload name (Deployment/StatefulSet/DaemonSet)
+	Service     string // {service} — annotation service, else Name
+	Environment string // {environment} — resolved GitHub environment
+	Cluster     string // {cluster} — resolved cluster name
+}
+
+// ExpandLogURL substitutes placeholders in LOG_URL_TEMPLATE.
+func (c Config) ExpandLogURL(v LogURLVars) string {
+	return ExpandLogURLTemplate(c.LogURLTemplate, v)
+}
+
+// ExpandLogURLTemplate substitutes log URL placeholders in tmpl.
+//
+// Supported: {sha}, {namespace}, {name}, {service}, {environment}, {cluster}.
+// {service} falls back to {name} when Service is empty.
+func ExpandLogURLTemplate(tmpl string, v LogURLVars) string {
+	if strings.TrimSpace(tmpl) == "" {
 		return ""
 	}
-	return strings.ReplaceAll(c.LogURLTemplate, "{sha}", sha)
+	service := strings.TrimSpace(v.Service)
+	if service == "" {
+		service = v.Name
+	}
+	return strings.NewReplacer(
+		"{sha}", v.SHA,
+		"{namespace}", v.Namespace,
+		"{name}", v.Name,
+		"{service}", service,
+		"{environment}", v.Environment,
+		"{cluster}", v.Cluster,
+	).Replace(tmpl)
 }

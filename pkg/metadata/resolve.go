@@ -100,7 +100,8 @@ func Resolve(annotations map[string]string, oci ocilabels.Metadata, defaults Def
 		return Resolved{}, err
 	}
 
-	// Annotation log-url is passed through as-is; defaults.LogURL is the expanded template.
+	// Annotation log-url may still contain placeholders; the reporter expands them.
+	// defaults.LogURL is unused (template applied in the reporter after resolve).
 	logURL, err := resolveHTTPSURL(ann[AnnotationLogURL], defaults.LogURL, AnnotationLogURL)
 	if err != nil {
 		return Resolved{}, err

@@ -419,14 +419,30 @@ func (r *Reporter) resolveImage(ctx context.Context, img WorkloadImage) (metadat
 		return metadata.Resolved{}, "", retry.Permanent(err)
 	}
 
-	// Apply controller log URL template when the annotation is absent.
-	if strings.TrimSpace(img.Annotations[metadata.AnnotationLogURL]) == "" {
-		if logURL := r.cfg.ExpandLogURL(resolved.Commit); logURL != "" {
-			if !metadata.ValidHTTPSURL(logURL) {
-				return metadata.Resolved{}, "", retry.Permanent(fmt.Errorf("LOG_URL_TEMPLATE expanded to invalid HTTPS URL %q", logURL))
+	// Expand log URL placeholders ({sha}, {namespace}, {name}, {service}, …).
+	// Annotation log-url wins over LOG_URL_TEMPLATE; both support the same vars.
+	vars := config.LogURLVars{
+		SHA:         resolved.Commit,
+		Namespace:   img.Namespace,
+		Name:        img.Name,
+		Service:     resolved.Service,
+		Environment: resolved.Environment,
+		Cluster:     resolved.Cluster,
+	}
+	tmpl := strings.TrimSpace(img.Annotations[metadata.AnnotationLogURL])
+	fromAnnotation := tmpl != ""
+	if !fromAnnotation {
+		tmpl = r.cfg.LogURLTemplate
+	}
+	if logURL := config.ExpandLogURLTemplate(tmpl, vars); logURL != "" {
+		if !metadata.ValidHTTPSURL(logURL) {
+			src := "LOG_URL_TEMPLATE"
+			if fromAnnotation {
+				src = metadata.AnnotationLogURL
 			}
-			resolved.LogURL = logURL
+			return metadata.Resolved{}, "", retry.Permanent(fmt.Errorf("%s expanded to invalid HTTPS URL %q", src, logURL))
 		}
+		resolved.LogURL = logURL
 	}
 
 	return resolved, ociMeta.Digest, nil

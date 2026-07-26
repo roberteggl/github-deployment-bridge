@@ -22,7 +22,7 @@ func TestLoadAndExpand(t *testing.T) {
 	if !cfg.IsProduction() {
 		t.Fatal("expected production")
 	}
-	if got := cfg.ExpandLogURL("abc"); got != "https://logs.example.com?commit=abc" {
+	if got := cfg.ExpandLogURL(config.LogURLVars{SHA: "abc"}); got != "https://logs.example.com?commit=abc" {
 		t.Fatalf("ExpandLogURL = %q", got)
 	}
 	if cfg.LogLevel != "info" {
@@ -34,6 +34,73 @@ func TestLoadAndExpand(t *testing.T) {
 	}
 	if level != slog.LevelInfo {
 		t.Fatalf("SlogLevel = %v, want info", level)
+	}
+}
+
+func TestExpandLogURLTemplate(t *testing.T) {
+	t.Parallel()
+
+	const grafana = "https://grafana.example.com/a/explore/service/{name}/logs" +
+		"?var-filters=service_name%7C%3D%7C{service}" +
+		"&var-filters=namespace%7C%3D%7C{namespace}" +
+		"&cluster={cluster}&env={environment}&sha={sha}"
+
+	tests := []struct {
+		name string
+		tmpl string
+		vars config.LogURLVars
+		want string
+	}{
+		{
+			name: "empty",
+			tmpl: "",
+			vars: config.LogURLVars{SHA: "abc"},
+			want: "",
+		},
+		{
+			name: "sha only",
+			tmpl: "https://logs.example.com?commit={sha}",
+			vars: config.LogURLVars{SHA: "deadbeef"},
+			want: "https://logs.example.com?commit=deadbeef",
+		},
+		{
+			name: "grafana loki explore",
+			tmpl: grafana,
+			vars: config.LogURLVars{
+				SHA:         "deadbeef",
+				Namespace:   "neuland-app",
+				Name:        "neuland-api-prod",
+				Environment: "production",
+				Cluster:     "neuland",
+			},
+			want: "https://grafana.example.com/a/explore/service/neuland-api-prod/logs" +
+				"?var-filters=service_name%7C%3D%7Cneuland-api-prod" +
+				"&var-filters=namespace%7C%3D%7Cneuland-app" +
+				"&cluster=neuland&env=production&sha=deadbeef",
+		},
+		{
+			name: "service annotation overrides name",
+			tmpl: "https://logs.example.com/s/{service}/n/{name}",
+			vars: config.LogURLVars{
+				Name:    "deploy-name",
+				Service: "loki-service",
+			},
+			want: "https://logs.example.com/s/loki-service/n/deploy-name",
+		},
+		{
+			name: "service falls back to name",
+			tmpl: "https://logs.example.com/s/{service}",
+			vars: config.LogURLVars{Name: "backend"},
+			want: "https://logs.example.com/s/backend",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := config.ExpandLogURLTemplate(tt.tmpl, tt.vars); got != tt.want {
+				t.Fatalf("ExpandLogURLTemplate = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 

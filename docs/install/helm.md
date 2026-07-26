@@ -25,6 +25,13 @@ helm upgrade --install github-deployment-bridge \
   --set config.logURLTemplate='https://grafana.example.com/explore?commit={sha}'
 ```
 
+Per-service Loki Explore links (common for Grafana) can use workload placeholders
+instead of a single commit-scoped URL:
+
+```bash
+  --set config.logURLTemplate='https://grafana.example.com/a/grafana-lokiexplore-app/explore/service/{name}/logs?from=now-1h&to=now&var-ds=loki&var-filters=service_name%7C%3D%7C{name}&var-filters=namespace%7C%3D%7C{namespace}'
+```
+
 ## From a local checkout
 
 ```bash
@@ -45,6 +52,7 @@ config:
   environment: production
   watchNamespace: ""          # empty = all namespaces
   environmentURL: https://app.example.com
+  # Placeholders: {sha} {namespace} {name} {service} {environment} {cluster}
   logURLTemplate: https://grafana.example.com/explore?commit={sha}
   logLevel: info
 
@@ -140,7 +148,7 @@ reference (env vars, Helm map, metrics, registries).
 | `config.environment` | `ENVIRONMENT` | GitHub deployment environment |
 | `config.watchNamespace` | `WATCH_NAMESPACE` | Limit to one namespace; empty = cluster-wide |
 | `config.environmentURL` | `ENVIRONMENT_URL` | Optional URL on deployment statuses |
-| `config.logURLTemplate` | `LOG_URL_TEMPLATE` | Optional log link; `{sha}` → commit |
+| `config.logURLTemplate` | `LOG_URL_TEMPLATE` | Optional log URL template (`{sha}`, `{namespace}`, `{name}`, `{service}`, `{environment}`, `{cluster}`) |
 | `config.logLevel` | `LOG_LEVEL` | `debug` / `info` / `warn` / `error` |
 | `config.githubBaseURL` | `GITHUB_BASE_URL` | GitHub Enterprise base URL |
 

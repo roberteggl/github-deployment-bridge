@@ -118,7 +118,7 @@ Prefix: `github-deployment-bridge.io/`
 | `commit` | OCI `revision` | Exceptional commit override |
 | `environment` | `ENVIRONMENT` | GitHub Deployment environment |
 | `environment-url` | `ENVIRONMENT_URL` | Deployment Status `environment_url` |
-| `log-url` | `LOG_URL_TEMPLATE` | Deployment Status `log_url` |
+| `log-url` | `LOG_URL_TEMPLATE` | Deployment Status `log_url` (both support `{sha}` / `{namespace}` / `{name}` / `{service}` / `{environment}` / `{cluster}`) |
 | `description` | default text | Deployment description |
 | `production` | derived from env name | `production_environment` (`true`/`false`) |
 | `auto-report` | _(none)_ | **Opt-in.** Must be `true` to report; absent/`false` ignores the workload (no OCI fetch, no warning spam) |

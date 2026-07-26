@@ -48,7 +48,7 @@ helm upgrade --install github-deployment-bridge \
 | `config.environment` | `production` | GitHub deployment environment name |
 | `config.watchNamespace` | `""` | Limit watches to one namespace; empty = cluster-wide |
 | `config.environmentURL` | `""` | Optional URL attached to deployment statuses |
-| `config.logURLTemplate` | `""` | Optional log link; `{sha}` → commit SHA |
+| `config.logURLTemplate` | `""` | Optional log URL template (`{sha}`, `{namespace}`, `{name}`, `{service}`, `{environment}`, `{cluster}`) |
 | `github.existingSecret` | `""` | Secret with `app-id`, `installation-id`, `private-key` |
 | `persistence.enabled` | `true` | PVC for SQLite deduplication cache (keep on in production) |
 | `networkPolicy.enabled` | `false` | Opt-in NetworkPolicy |

@@ -162,6 +162,67 @@ func TestReporterCatchUpSuccessAndSkipsDuplicates(t *testing.T) {
 	if len(g.deployments) != 1 || len(g.statuses) != 1 {
 		t.Fatalf("duplicate not prevented: got %d deployments and %d statuses", len(g.deployments), len(g.statuses))
 	}
+	wantLog := "https://grafana.example.com/explore?commit=deadbeefcafebabe"
+	if g.statuses[0].LogURL != wantLog {
+		t.Fatalf("status LogURL = %q, want %q", g.statuses[0].LogURL, wantLog)
+	}
+}
+
+func TestReporterLogURLTemplatePlaceholders(t *testing.T) {
+	t.Parallel()
+	store, err := cache.Open(filepath.Join(t.TempDir(), "cache.db"))
+	if err != nil {
+		t.Fatalf("open cache: %v", err)
+	}
+	t.Cleanup(func() { _ = store.Close() })
+
+	cfg := config.Config{
+		ClusterName: "neuland",
+		Environment: "production",
+		LogURLTemplate: "https://grafana.example.com/explore/service/{name}/logs" +
+			"?var-filters=service_name%7C%3D%7C{service}" +
+			"&var-filters=namespace%7C%3D%7C{namespace}",
+	}
+	reg := &fakeRegistry{meta: ocilabels.Metadata{
+		Source:   "https://github.com/example/backend",
+		Revision: "deadbeefcafebabe",
+		Digest:   "sha256:abc",
+	}}
+	g := &fakeGitHub{}
+	r := deployment.NewReporter(cfg, store, reg, g, nil, slog.Default(), "test")
+
+	in := sampleInput(deployment.PhaseSuccess)
+	in.Images[0].Namespace = "neuland-app"
+	in.Images[0].Name = "neuland-api-prod"
+	if err := r.Report(context.Background(), in); err != nil {
+		t.Fatalf("report: %v", err)
+	}
+	if len(g.statuses) != 1 {
+		t.Fatalf("got %d statuses, want 1", len(g.statuses))
+	}
+	want := "https://grafana.example.com/explore/service/neuland-api-prod/logs" +
+		"?var-filters=service_name%7C%3D%7Cneuland-api-prod" +
+		"&var-filters=namespace%7C%3D%7Cneuland-app"
+	if g.statuses[0].LogURL != want {
+		t.Fatalf("LogURL = %q, want %q", g.statuses[0].LogURL, want)
+	}
+}
+
+func TestReporterLogURLAnnotationTemplate(t *testing.T) {
+	t.Parallel()
+	r, g := newTestReporter(t, nil)
+
+	in := sampleInput(deployment.PhaseSuccess)
+	in.Images[0].Annotations[metadata.AnnotationLogURL] =
+		"https://grafana.example.com/s/{service}/ns/{namespace}?sha={sha}"
+	in.Images[0].Annotations[metadata.AnnotationService] = "loki-backend"
+	if err := r.Report(context.Background(), in); err != nil {
+		t.Fatalf("report: %v", err)
+	}
+	want := "https://grafana.example.com/s/loki-backend/ns/apps?sha=deadbeefcafebabe"
+	if g.statuses[0].LogURL != want {
+		t.Fatalf("LogURL = %q, want %q", g.statuses[0].LogURL, want)
+	}
 }
 
 func TestReporterPayloadOptionalAnnotations(t *testing.T) {
