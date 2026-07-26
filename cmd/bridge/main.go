@@ -131,7 +131,12 @@ func run() error {
 		}
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOpts)
+	restConfig, err := ctrl.GetConfig()
+	if err != nil {
+		return fmt.Errorf("load kubernetes config: %w", err)
+	}
+
+	mgr, err := ctrl.NewManager(restConfig, mgrOpts)
 	if err != nil {
 		return fmt.Errorf("create manager: %w", err)
 	}
@@ -161,40 +166,58 @@ func run() error {
 		return fmt.Errorf("add readyz: %w", err)
 	}
 
-	// Combined metrics + probe HTTP server on MetricsAddr.
-	metricsSrv := newMetricsServer(cfg.MetricsAddr, probes)
-	go func() {
-		log.Info("starting metrics server", "addr", cfg.MetricsAddr)
-		if err := metricsSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Error("metrics server failed", "error", err)
-			os.Exit(1)
-		}
-	}()
-
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	// Combined metrics + probe HTTP server on MetricsAddr.
+	metricsSrv := newMetricsServer(cfg.MetricsAddr, probes)
+	serverErr := make(chan error, 1)
 	go func() {
-		<-ctx.Done()
+		log.Info("starting metrics server", "addr", cfg.MetricsAddr)
+		if err := metricsSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErr <- fmt.Errorf("metrics server failed: %w", err)
+		}
+		close(serverErr)
+	}()
+
+	shutdownServer := func() {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		_ = metricsSrv.Shutdown(shutdownCtx)
+	}
+
+	managerErr := make(chan error, 1)
+	go func() {
+		probes.SetReady(true)
+		log.Info("starting manager",
+			"version", version,
+			"commit", commit,
+			"cluster", cfg.ClusterName,
+			"environment", cfg.Environment,
+			"watch_namespace", cfg.WatchNamespace,
+			"log_level", cfg.LogLevel,
+		)
+		managerErr <- mgr.Start(ctx)
+		close(managerErr)
 	}()
 
-	probes.SetReady(true)
-	log.Info("starting manager",
-		"version", version,
-		"commit", commit,
-		"cluster", cfg.ClusterName,
-		"environment", cfg.Environment,
-		"watch_namespace", cfg.WatchNamespace,
-		"log_level", cfg.LogLevel,
-	)
-
-	if err := mgr.Start(ctx); err != nil {
-		return fmt.Errorf("manager exited: %w", err)
+	select {
+	case err := <-serverErr:
+		stop()
+		shutdownServer()
+		<-managerErr
+		return err
+	case err := <-managerErr:
+		stop()
+		shutdownServer()
+		if err != nil {
+			return fmt.Errorf("manager exited: %w", err)
+		}
+		if err := <-serverErr; err != nil {
+			return err
+		}
+		return nil
 	}
-	return nil
 }
 
 func newMetricsServer(addr string, probes *health.Checker) *http.Server {
@@ -205,5 +228,8 @@ func newMetricsServer(addr string, probes *health.Checker) *http.Server {
 		Addr:              addr,
 		Handler:           r,
 		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 }
