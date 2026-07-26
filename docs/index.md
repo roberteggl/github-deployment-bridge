@@ -3,9 +3,10 @@ pageType: home
 title: GitHub Deployment Bridge
 titleSuffix: FluxCD to GitHub Deployments
 hero:
+  badge: Flux · GitHub App · observe only
   name: GitHub Deployment Bridge
   text: Flux state, mirrored to GitHub Deployments
-  tagline: A Kubernetes controller that watches Flux Kustomizations and HelmReleases and reports lifecycle to the GitHub Deployments API - observe only, never orchestrate.
+  tagline: A Kubernetes controller that watches Flux Kustomizations and HelmReleases and reports the full Deployments lifecycle - observe only, never orchestrate.
   actions:
     - theme: brand
       text: Install

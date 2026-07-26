@@ -3,10 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  HomeBackground,
+  HomeFeature,
+  HomeFooter,
+  HomeHero,
   Layout as BasicLayout,
   renderHtmlOrText,
+  type HomeLayoutProps,
 } from "@rspress/core/theme-original";
 import { useSite } from "@rspress/core/runtime";
+import { HeroBridgeGraphic } from "./HeroBridgeGraphic";
 
 function SiteFooterMessage() {
   const { site } = useSite();
@@ -25,9 +31,37 @@ function SiteFooterMessage() {
   );
 }
 
+function HomeLayout(props: HomeLayoutProps) {
+  const {
+    beforeHero,
+    afterHero,
+    beforeFeatures,
+    afterFeatures,
+    beforeHeroActions,
+    afterHeroActions,
+  } = props;
+
+  return (
+    <>
+      <HomeBackground />
+      {beforeHero}
+      <HomeHero
+        beforeHeroActions={beforeHeroActions}
+        afterHeroActions={afterHeroActions}
+        image={<HeroBridgeGraphic />}
+      />
+      {afterHero}
+      {beforeFeatures}
+      <HomeFeature />
+      {afterFeatures}
+      <HomeFooter />
+    </>
+  );
+}
+
 const Layout = () => (
   <BasicLayout afterDocFooter={<SiteFooterMessage />} />
 );
 
-export { Layout };
 export * from "@rspress/core/theme-original";
+export { Layout, HomeLayout };

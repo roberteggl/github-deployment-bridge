@@ -185,6 +185,170 @@ html.rp-dark {
   line-height: 1.55;
 }
 
+.rp-home-hero__badge {
+  border-radius: var(--rp-radius-small) !important;
+  font-family: var(--rp-font-family-mono);
+  font-size: 0.75rem !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rp-home-hero__badge:before {
+  background: var(--gdb-accent) !important;
+}
+
+/* With graphic: keep type subordinate to the schematic */
+.rp-home-hero:not(.rp-home-hero--no-image) {
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 3.5rem;
+}
+
+.rp-home-hero:not(.rp-home-hero--no-image) .rp-home-hero__title {
+  font-size: clamp(2.35rem, 3.8vw, 3.35rem);
+  line-height: 1.1;
+}
+
+.rp-home-hero:not(.rp-home-hero--no-image) .rp-home-hero__subtitle {
+  margin-top: 0.75rem;
+  font-size: clamp(1.35rem, 2.6vw, 1.85rem);
+  line-height: 1.25;
+  max-width: 22rem;
+  color: var(--rp-c-text-1);
+}
+
+.rp-home-hero:not(.rp-home-hero--no-image) .rp-home-hero__container {
+  gap: 1.5rem;
+  flex: 1.15;
+}
+
+/* Hero schematic: self-built Flux → Bridge → GitHub graphic */
+.gdb-hero-graphic {
+  width: min(100%, 36rem);
+  margin-inline: auto;
+  animation: gdb-hero-float 7s ease-in-out infinite;
+}
+
+.gdb-hero-graphic__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.gdb-hero-graphic__mono,
+.gdb-hero-graphic__label {
+  font-family: var(--rp-font-family-mono);
+}
+
+.gdb-hero-graphic__label {
+  font-family: var(--rp-font-family-base);
+}
+
+.gdb-hero-graphic__rail {
+  animation: gdb-rail-flow 1.6s linear infinite;
+}
+
+.gdb-hero-graphic__ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gdb-ring-spin 12s linear infinite;
+}
+
+.gdb-hero-graphic__status--queued circle {
+  animation: gdb-status-pulse 3.6s ease-in-out infinite;
+}
+
+.gdb-hero-graphic__status--progress circle {
+  animation: gdb-status-pulse 3.6s ease-in-out 1.2s infinite;
+}
+
+.gdb-hero-graphic__status--success circle {
+  animation: gdb-status-pulse 3.6s ease-in-out 2.4s infinite;
+}
+
+.gdb-hero-graphic__live {
+  animation: gdb-live-blink 1.8s ease-in-out infinite;
+}
+
+.rp-home-hero__image {
+  flex: 1.05;
+  max-width: min(52vw, 36rem);
+  width: 100%;
+}
+
+@media (width <= 1000px) {
+  .rp-home-hero:not(.rp-home-hero--no-image) {
+    margin-top: 1.25rem;
+  }
+
+  .rp-home-hero__image {
+    max-width: min(94vw, 36rem);
+    margin-block: 0.75rem 0.25rem;
+  }
+}
+
+@keyframes gdb-hero-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes gdb-rail-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@keyframes gdb-ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gdb-status-pulse {
+  0%,
+  55%,
+  100% {
+    fill: var(--gdb-accent-soft);
+    stroke: var(--gdb-accent);
+  }
+  20%,
+  35% {
+    fill: var(--gdb-accent);
+    stroke: var(--gdb-accent);
+  }
+}
+
+@keyframes gdb-live-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gdb-hero-graphic,
+  .gdb-hero-graphic__rail,
+  .gdb-hero-graphic__ring,
+  .gdb-hero-graphic__status circle,
+  .gdb-hero-graphic__live,
+  .gdb-hero-graphic__packet {
+    animation: none !important;
+  }
+
+  .gdb-hero-graphic__packet animateMotion {
+    display: none;
+  }
+}
+
 .rp-button--brand,
 .rp-button--brand:hover {
   background: var(--gdb-ink) !important;
