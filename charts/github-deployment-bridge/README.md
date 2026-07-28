@@ -32,7 +32,7 @@ Install from the published OCI chart:
 ```bash
 helm upgrade --install github-deployment-bridge \
   oci://ghcr.io/roberteggl/charts/github-deployment-bridge \
-  --version 1.3.6 \
+  --version 1.4.0 \
   --namespace flux-system \
   --create-namespace \
   --set github.existingSecret=github-deployment-bridge \
