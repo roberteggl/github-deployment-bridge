@@ -33,6 +33,15 @@ prometheusRule:
     release: kube-prometheus-stack
 ```
 
+## Link GitHub deployments to Grafana
+
+Use the bridge's `log_url` template to make GitHub's **View deployment logs**
+link open the relevant Grafana view. Ready-to-use Loki Explore and dashboard
+templates are in [Log URL placeholders](../configuration/environment.md#copy-paste-presets).
+Enable `config.logURLTemplateEscape: true` so workload-derived values cannot
+alter the URL query or path. This links to Grafana; it does not add Grafana data
+or provider-specific fields to the GitHub Deployment payload.
+
 ## Import
 
 ### Grafana UI

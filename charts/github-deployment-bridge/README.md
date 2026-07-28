@@ -50,6 +50,7 @@ helm upgrade --install github-deployment-bridge \
 | `config.environmentURL` | `""` | Optional URL attached to deployment statuses |
 | `config.description` | `""` | Optional default deployment description (empty → `Deployed by FluxCD`) |
 | `config.logURLTemplate` | `""` | Optional log URL template (`{sha}`, `{namespace}`, `{name}`, `{service}`, `{environment}`, `{cluster}`) |
+| `config.logURLTemplateEscape` | `false` | Percent-encode substituted log URL values |
 | `github.existingSecret` | `""` | Secret with `app-id`, `installation-id`, `private-key` |
 | `persistence.enabled` | `true` | PVC for SQLite deduplication cache (keep on in production) |
 | `networkPolicy.enabled` | `false` | Opt-in NetworkPolicy |

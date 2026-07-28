@@ -146,6 +146,9 @@ config:
   # {environment} {cluster}. Per-workload annotation log-url overrides this
   # and supports the same placeholders.
   logURLTemplate: ""
+  # Percent-encode every substituted placeholder value. The default false
+  # preserves the historical literal-substitution behavior.
+  logURLTemplateEscape: false
   # slog level: debug | info | warn | error
   logLevel: info
   leaderElection: true

@@ -81,6 +81,12 @@ PATs are not supported. Details: [docs/install/github-app.md](docs/install/githu
 
 Env vars and Helm mapping: [docs/configuration/](docs/configuration/).
 
+GitHub prominently exposes only `environment_url` and status `log_url`. Point
+`config.logURLTemplate` at Grafana Loki Explore, a Grafana dashboard, or another
+Flux/Kubernetes dashboard; enable `config.logURLTemplateEscape` for safe
+placeholder substitution. Copy-paste presets and Kustomization, HelmRelease,
+and monorepo examples are in [Log URL placeholders](docs/configuration/environment.md#log-url-placeholders).
+
 PVC / SQLite at `/data/cache.db` deduplicates
 `(owner, repo, environment, commitSHA, deploymentName)` across restarts - see
 [docs/install/persistence.md](docs/install/persistence.md).

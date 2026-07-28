@@ -8,6 +8,7 @@ package config
 import (
 	"fmt"
 	"log/slog"
+	"net/url"
 	"strings"
 	"time"
 
@@ -23,6 +24,7 @@ type Config struct {
 	EnvironmentURL             string        `envconfig:"ENVIRONMENT_URL"`
 	Description                string        `envconfig:"DESCRIPTION"`
 	LogURLTemplate             string        `envconfig:"LOG_URL_TEMPLATE"`
+	LogURLTemplateEscape       bool          `envconfig:"LOG_URL_TEMPLATE_ESCAPE" default:"false"`
 	LogLevel                   string        `envconfig:"LOG_LEVEL" default:"info"`
 	MetricsAddr                string        `envconfig:"METRICS_ADDR" default:":8080"`
 	ProbeAddr                  string        `envconfig:"PROBE_ADDR" default:":8081"`
@@ -105,7 +107,7 @@ type LogURLVars struct {
 
 // ExpandLogURL substitutes placeholders in LOG_URL_TEMPLATE.
 func (c Config) ExpandLogURL(v LogURLVars) string {
-	return ExpandLogURLTemplate(c.LogURLTemplate, v)
+	return ExpandLogURLTemplateEscaped(c.LogURLTemplate, v, c.LogURLTemplateEscape)
 }
 
 // ExpandLogURLTemplate substitutes log URL placeholders in tmpl.
@@ -113,6 +115,12 @@ func (c Config) ExpandLogURL(v LogURLVars) string {
 // Supported: {sha}, {namespace}, {name}, {service}, {environment}, {cluster}.
 // {service} falls back to {name} when Service is empty.
 func ExpandLogURLTemplate(tmpl string, v LogURLVars) string {
+	return ExpandLogURLTemplateEscaped(tmpl, v, false)
+}
+
+// ExpandLogURLTemplateEscaped substitutes placeholders, optionally percent-encoding
+// each value so it is safe in both URL paths and query parameters.
+func ExpandLogURLTemplateEscaped(tmpl string, v LogURLVars, escape bool) string {
 	if strings.TrimSpace(tmpl) == "" {
 		return ""
 	}
@@ -120,12 +128,20 @@ func ExpandLogURLTemplate(tmpl string, v LogURLVars) string {
 	if service == "" {
 		service = v.Name
 	}
+	value := func(s string) string {
+		if escape {
+			// QueryEscape covers URL delimiters (including '/', '&', '?' and '#').
+			// Use %20 rather than '+' so the result is also safe in path segments.
+			return strings.ReplaceAll(url.QueryEscape(s), "+", "%20")
+		}
+		return s
+	}
 	return strings.NewReplacer(
-		"{sha}", v.SHA,
-		"{namespace}", v.Namespace,
-		"{name}", v.Name,
-		"{service}", service,
-		"{environment}", v.Environment,
-		"{cluster}", v.Cluster,
+		"{sha}", value(v.SHA),
+		"{namespace}", value(v.Namespace),
+		"{name}", value(v.Name),
+		"{service}", value(service),
+		"{environment}", value(v.Environment),
+		"{cluster}", value(v.Cluster),
 	).Replace(tmpl)
 }

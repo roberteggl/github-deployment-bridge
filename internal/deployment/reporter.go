@@ -434,15 +434,18 @@ func (r *Reporter) resolveImage(ctx context.Context, img WorkloadImage) (metadat
 	if !fromAnnotation {
 		tmpl = r.cfg.LogURLTemplate
 	}
-	if logURL := config.ExpandLogURLTemplate(tmpl, vars); logURL != "" {
+	if logURL := config.ExpandLogURLTemplateEscaped(tmpl, vars, r.cfg.LogURLTemplateEscape); logURL != "" {
 		if !metadata.ValidHTTPSURL(logURL) {
 			src := "LOG_URL_TEMPLATE"
 			if fromAnnotation {
 				src = metadata.AnnotationLogURL
 			}
-			return metadata.Resolved{}, "", retry.Permanent(fmt.Errorf("%s expanded to invalid HTTPS URL %q", src, logURL))
+			r.log.Warn("log URL template expanded to an invalid HTTPS URL; omitting log_url",
+				"source", src, "url", logURL, "workload_kind", img.Kind,
+				"workload_namespace", img.Namespace, "workload_name", img.Name)
+		} else {
+			resolved.LogURL = logURL
 		}
-		resolved.LogURL = logURL
 	}
 
 	return resolved, ociMeta.Digest, nil

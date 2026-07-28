@@ -14,6 +14,7 @@ SPDX-License-Identifier: Apache-2.0
 | `config.environmentURL` | `ENVIRONMENT_URL` |
 | `config.description` | `DESCRIPTION` |
 | `config.logURLTemplate` | `LOG_URL_TEMPLATE` |
+| `config.logURLTemplateEscape` | `LOG_URL_TEMPLATE_ESCAPE` |
 | `config.logLevel` | `LOG_LEVEL` |
 | `config.leaderElection` | `LEADER_ELECTION` |
 | `config.githubBaseURL` | `GITHUB_BASE_URL` |
