@@ -150,6 +150,8 @@ config:
   logLevel: info
   leaderElection: true
   githubBaseURL: ""
+  # TTL for owner-to-installation mappings persisted in SQLite.
+  githubInstallationCacheTTL: 1h
   # GitHub API and OCI registry retry backoff (maps to RETRY_* env vars).
   retry:
     maxAttempts: 5
@@ -159,13 +161,14 @@ config:
 
 github:
   # Name of an existing Secret containing:
-  #   app-id, installation-id, private-key
+  #   app-id, private-key (installation-id is optional as an explicit override)
   existingSecret: ""
   # Or provide values directly. Requires allowInsecureValues=true because the
   # PEM is stored in the Helm release Secret (sh.helm.release.v1.*) as well as
   # the chart-managed Secret - not recommended for production.
   allowInsecureValues: false
   appId: ""
+  # Optional fixed installation override. Empty resolves by repository owner.
   installationId: ""
   # PEM contents of the GitHub App private key.
   privateKey: ""

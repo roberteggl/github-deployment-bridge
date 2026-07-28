@@ -11,10 +11,10 @@ Credentials come from a Kubernetes Secret (never a PAT):
 | Key | Used as |
 |---|---|
 | `app-id` | `GITHUB_APP_ID` |
-| `installation-id` | `GITHUB_INSTALLATION_ID` |
+| `installation-id` (optional) | `GITHUB_INSTALLATION_ID` fixed override |
 | `private-key` | PEM mounted at `/github/private-key.pem` |
 
-Prefer `github.existingSecret`. Inline `github.appId` / `installationId` /
+Prefer `github.existingSecret`. Inline `github.appId` / optional `installationId` /
 `privateKey` require `github.allowInsecureValues=true` and are also stored in
 Helm release history - fine for local/dev only.
 

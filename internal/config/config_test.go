@@ -2,7 +2,9 @@ package config_test
 
 import (
 	"log/slog"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/roberteggl/github-deployment-bridge/internal/config"
 )
@@ -38,6 +40,25 @@ func TestLoadAndExpand(t *testing.T) {
 	}
 	if level != slog.LevelInfo {
 		t.Fatalf("SlogLevel = %v, want info", level)
+	}
+}
+
+func TestLoadAllowsAutomaticInstallationResolution(t *testing.T) {
+	t.Setenv("CLUSTER_NAME", "production-eu")
+	t.Setenv("ENVIRONMENT", "production")
+	t.Setenv("GITHUB_APP_ID", "123")
+	t.Setenv("GITHUB_INSTALLATION_ID", "temporary")
+	if err := os.Unsetenv("GITHUB_INSTALLATION_ID"); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GITHUB_PRIVATE_KEY_PATH", "/tmp/key.pem")
+
+	cfg, err := config.Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.GitHubInstallationID != 0 || cfg.GitHubInstallationCacheTTL != time.Hour {
+		t.Fatalf("installation config = %d, %s", cfg.GitHubInstallationID, cfg.GitHubInstallationCacheTTL)
 	}
 }
 

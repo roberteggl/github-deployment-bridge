@@ -14,4 +14,10 @@ SPDX-License-Identifier: Apache-2.0
 
 Webhook: inactive. PATs are not supported.
 
+The App must be installed on each target repository owner. By default the bridge
+lists installations using App JWT authentication, matches the repository owner,
+and caches the installation ID in SQLite for one hour. This lookup requires no
+additional configured App permission. `GITHUB_INSTALLATION_ID` remains available
+as a fixed backwards-compatible override.
+
 Create and install the App: [Install → GitHub App setup](../install/github-app.md).
