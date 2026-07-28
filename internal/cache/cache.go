@@ -58,6 +58,20 @@ type Store interface {
 	Close() error
 }
 
+// InstallationEntry maps a repository owner to a GitHub App installation.
+type InstallationEntry struct {
+	Owner          string
+	InstallationID int64
+	ResolvedAt     time.Time
+}
+
+// InstallationStore persists automatically resolved GitHub App installations.
+type InstallationStore interface {
+	GetInstallation(ctx context.Context, owner string) (*InstallationEntry, error)
+	PutInstallation(ctx context.Context, entry InstallationEntry) error
+	DeleteInstallation(ctx context.Context, owner string) error
+}
+
 // SQLiteStore is a SQLite-backed Store.
 type SQLiteStore struct {
 	db *sql.DB
@@ -93,6 +107,11 @@ CREATE TABLE IF NOT EXISTS deployments (
 	reported_at TEXT NOT NULL,
 	PRIMARY KEY (owner, repo, environment, commit_sha, deployment_name)
 );
+CREATE TABLE IF NOT EXISTS github_installations (
+	owner TEXT NOT NULL PRIMARY KEY COLLATE NOCASE,
+	installation_id INTEGER NOT NULL,
+	resolved_at TEXT NOT NULL
+);
 `
 	if _, err := s.db.Exec(schema); err != nil {
 		return fmt.Errorf("migrate sqlite: %w", err)
@@ -109,6 +128,47 @@ CREATE TABLE IF NOT EXISTS deployments (
 	}
 	if _, err := s.db.Exec(`PRAGMA busy_timeout=5000;`); err != nil {
 		return fmt.Errorf("set busy_timeout: %w", err)
+	}
+	return nil
+}
+
+// GetInstallation returns the cached installation for owner, or nil when absent.
+func (s *SQLiteStore) GetInstallation(ctx context.Context, owner string) (*InstallationEntry, error) {
+	var entry InstallationEntry
+	var resolvedAt string
+	err := s.db.QueryRowContext(ctx, `SELECT owner, installation_id, resolved_at FROM github_installations WHERE owner = ?`, owner).
+		Scan(&entry.Owner, &entry.InstallationID, &resolvedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("installation cache get: %w", err)
+	}
+	entry.ResolvedAt, err = time.Parse(time.RFC3339Nano, resolvedAt)
+	if err != nil {
+		return nil, fmt.Errorf("parse installation resolved_at: %w", err)
+	}
+	return &entry, nil
+}
+
+// PutInstallation upserts the installation for owner.
+func (s *SQLiteStore) PutInstallation(ctx context.Context, entry InstallationEntry) error {
+	if entry.ResolvedAt.IsZero() {
+		entry.ResolvedAt = time.Now().UTC()
+	}
+	_, err := s.db.ExecContext(ctx, `INSERT INTO github_installations (owner, installation_id, resolved_at) VALUES (?, ?, ?)
+ON CONFLICT(owner) DO UPDATE SET installation_id = excluded.installation_id, resolved_at = excluded.resolved_at`,
+		entry.Owner, entry.InstallationID, entry.ResolvedAt.UTC().Format(time.RFC3339Nano))
+	if err != nil {
+		return fmt.Errorf("installation cache put: %w", err)
+	}
+	return nil
+}
+
+// DeleteInstallation invalidates the cached installation for owner.
+func (s *SQLiteStore) DeleteInstallation(ctx context.Context, owner string) error {
+	if _, err := s.db.ExecContext(ctx, `DELETE FROM github_installations WHERE owner = ?`, owner); err != nil {
+		return fmt.Errorf("installation cache delete: %w", err)
 	}
 	return nil
 }

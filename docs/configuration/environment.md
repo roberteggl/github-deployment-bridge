@@ -22,7 +22,8 @@ SPDX-License-Identifier: Apache-2.0
 | `LEADER_ELECTION` | no | `true` | Enable leader election |
 | `LEADER_ELECTION_ID` | no | `github-deployment-bridge` | Lease name |
 | `GITHUB_APP_ID` | yes | | GitHub App ID |
-| `GITHUB_INSTALLATION_ID` | yes | | GitHub App installation ID |
+| `GITHUB_INSTALLATION_ID` | no | _(automatic)_ | Explicit installation override; when unset, resolve by repository owner and cache in SQLite |
+| `GITHUB_INSTALLATION_CACHE_TTL` | no | `1h` | TTL for automatically resolved owner-to-installation mappings |
 | `GITHUB_PRIVATE_KEY_PATH` | yes | | Path to App private key PEM |
 | `GITHUB_BASE_URL` | no | | GitHub Enterprise API base URL |
 | `RETRY_MAX_ATTEMPTS` | no | `5` | Retry attempts for GitHub/OCI calls |

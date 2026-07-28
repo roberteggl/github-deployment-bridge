@@ -96,12 +96,15 @@ func run() error {
 	}
 
 	gh, err := ghclient.NewAppClient(ghclient.Options{
-		AppID:          cfg.GitHubAppID,
-		InstallationID: cfg.GitHubInstallationID,
-		PrivateKeyPath: cfg.GitHubPrivateKeyPath,
-		BaseURL:        cfg.GitHubBaseURL,
-		Metrics:        m,
-		Retry:          retryCfg,
+		AppID:                cfg.GitHubAppID,
+		InstallationID:       cfg.GitHubInstallationID,
+		PrivateKeyPath:       cfg.GitHubPrivateKeyPath,
+		BaseURL:              cfg.GitHubBaseURL,
+		Metrics:              m,
+		Retry:                retryCfg,
+		InstallationCache:    store,
+		InstallationCacheTTL: cfg.GitHubInstallationCacheTTL,
+		Log:                  log,
 	})
 	if err != nil {
 		return fmt.Errorf("create github client: %w", err)

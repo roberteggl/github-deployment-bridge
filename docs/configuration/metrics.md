@@ -19,6 +19,7 @@ Exposed on `METRICS_ADDR` (default `:8080`) at `/metrics` over unauthenticated H
 | `github_api_requests_total` | GitHub API calls by `operation` and `result` |
 | `github_api_failures_total` | Failed GitHub API calls |
 | `github_api_latency_seconds` | GitHub API latency histogram |
+| `github_installation_resolutions_total` | Installation resolution outcomes (`resolved`, `cache_hit`, `failure`, or fixed-ID `fallback`) |
 | `oci_requests_total` | Registry inspect results |
 
 ## Scraping

@@ -18,11 +18,12 @@ SPDX-License-Identifier: Apache-2.0
 | `config.logLevel` | `LOG_LEVEL` |
 | `config.leaderElection` | `LEADER_ELECTION` |
 | `config.githubBaseURL` | `GITHUB_BASE_URL` |
+| `config.githubInstallationCacheTTL` | `GITHUB_INSTALLATION_CACHE_TTL` |
 | `config.retry.maxAttempts` | `RETRY_MAX_ATTEMPTS` |
 | `config.retry.initialBackoff` | `RETRY_INITIAL_BACKOFF` |
 | `config.retry.maxBackoff` | `RETRY_MAX_BACKOFF` |
 | _(fixed by chart)_ | `DATABASE=/data/cache.db` |
-| `github.existingSecret` / chart Secret | `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, key file |
+| `github.existingSecret` / chart Secret | `GITHUB_APP_ID`, optional `GITHUB_INSTALLATION_ID`, key file |
 | `github.allowInsecureValues` | _(chart only)_ - allow inline `appId` / `installationId` / `privateKey` (Helm release Secret risk) |
 | `commonLabels` / `podLabels` | _(chart only)_ - extra labels on all resources / pod template only |
 | `rbac.create` | _(chart only)_ - emit RBAC |

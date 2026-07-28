@@ -12,16 +12,17 @@ import (
 
 // Metrics holds Prometheus collectors.
 type Metrics struct {
-	DeploymentsCreatedTotal          prometheus.Counter
-	DeploymentStatusUpdatesTotal     prometheus.Counter
-	DeploymentFailuresTotal          prometheus.Counter
-	DeploymentErrorsTotal            prometheus.Counter
-	DeploymentDuplicatesSkippedTotal prometheus.Counter
-	DeploymentInactiveTotal          prometheus.Counter
-	GitHubAPIRequestsTotal           *prometheus.CounterVec
-	GitHubAPIFailuresTotal           prometheus.Counter
-	GitHubAPILatencySeconds          *prometheus.HistogramVec
-	OCIRequestsTotal                 *prometheus.CounterVec
+	DeploymentsCreatedTotal            prometheus.Counter
+	DeploymentStatusUpdatesTotal       prometheus.Counter
+	DeploymentFailuresTotal            prometheus.Counter
+	DeploymentErrorsTotal              prometheus.Counter
+	DeploymentDuplicatesSkippedTotal   prometheus.Counter
+	DeploymentInactiveTotal            prometheus.Counter
+	GitHubAPIRequestsTotal             *prometheus.CounterVec
+	GitHubAPIFailuresTotal             prometheus.Counter
+	GitHubAPILatencySeconds            *prometheus.HistogramVec
+	GitHubInstallationResolutionsTotal *prometheus.CounterVec
+	OCIRequestsTotal                   *prometheus.CounterVec
 }
 
 // New registers metrics with the given registerer (or the default if nil).
@@ -69,6 +70,10 @@ func New(reg prometheus.Registerer) *Metrics {
 			Help:    "Latency of GitHub API requests in seconds.",
 			Buckets: prometheus.DefBuckets,
 		}, []string{"operation"}),
+		GitHubInstallationResolutionsTotal: factory.NewCounterVec(prometheus.CounterOpts{
+			Name: "github_installation_resolutions_total",
+			Help: "Total GitHub App installation resolution outcomes.",
+		}, []string{"result"}),
 		OCIRequestsTotal: factory.NewCounterVec(prometheus.CounterOpts{
 			Name: "oci_requests_total",
 			Help: "Total number of OCI registry requests by result.",

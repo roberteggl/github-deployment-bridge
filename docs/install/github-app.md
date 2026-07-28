@@ -42,15 +42,23 @@ Store it securely; the chart mounts it into the pod as a Secret.
 
 ## 4. Install the App
 
-Install the App on the target org or repositories, then note:
+Install the App on every target organization or user account and grant it access
+to the repositories the bridge may report. The bridge uses App authentication to
+list the App's installations and selects the installation whose account login
+matches the repository owner discovered from workload metadata. This App-level
+installation listing does not require an additional repository or organization
+permission.
+
+Then note:
 
 | Value | Where to find it |
 |---|---|
 | **App ID** | App settings → **About** → App ID |
-| **Installation ID** | After install, the URL looks like `…/installations/<id>` |
+| **Installation ID** (optional) | URL `…/installations/<id>`; set only to force one installation for backwards compatibility |
 | **Private key** | The downloaded `.pem` |
 
 For GitHub Enterprise Server, also set `config.githubBaseURL` (or
-`GITHUB_BASE_URL`) to your instance base URL.
+`GITHUB_BASE_URL`) to your instance base URL. Automatic resolution uses that
+same server's App and installation APIs.
 
 Next: [Secrets](./secrets.md)
