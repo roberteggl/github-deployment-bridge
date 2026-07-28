@@ -68,6 +68,8 @@ spec:
               value: {{ .Values.config.description | quote }}
             - name: LOG_URL_TEMPLATE
               value: {{ .Values.config.logURLTemplate | quote }}
+            - name: LOG_URL_TEMPLATE_ESCAPE
+              value: {{ .Values.config.logURLTemplateEscape | quote }}
             - name: LOG_LEVEL
               value: {{ .Values.config.logLevel | default "info" | quote }}
             - name: METRICS_ADDR

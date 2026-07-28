@@ -108,3 +108,16 @@ When alerts are quiet but GitHub shows no Deployment:
    bridges share a repo.
 4. Dedup cache: same `(owner, repo, environment, commit, deploymentName)` skips
    duplicates - expected after retries.
+
+## Deployment log link is missing (no alert)
+
+1. Confirm `LOG_URL_TEMPLATE` / `config.logURLTemplate`, or the workload's
+   `github-deployment-bridge.io/log-url` override, is non-empty.
+2. Search bridge logs for `log URL template expanded to an invalid HTTPS URL`.
+   Invalid links are intentionally omitted without failing reconciliation or
+   GitHub deployment/status reporting.
+3. The expanded URL must be absolute HTTPS. Enable
+   `LOG_URL_TEMPLATE_ESCAPE=true` / `config.logURLTemplateEscape: true` when
+   workload values appear in paths or query parameters.
+4. Copy a known-good [preset](../configuration/environment.md#copy-paste-presets)
+   and replace its host and dashboard/datasource identifiers.

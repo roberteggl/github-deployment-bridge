@@ -22,7 +22,8 @@ helm upgrade --install github-deployment-bridge \
   --set config.clusterName=production-eu \
   --set config.environment=production \
   --set config.environmentURL=https://app.example.com \
-  --set config.logURLTemplate='https://grafana.example.com/explore?commit={sha}'
+	  --set config.logURLTemplate='https://grafana.example.com/explore?commit={sha}' \
+	  --set config.logURLTemplateEscape=true
 ```
 
 Per-service Loki Explore links (common for Grafana) can use workload placeholders
@@ -54,6 +55,7 @@ config:
   environmentURL: https://app.example.com
   # Placeholders: {sha} {namespace} {name} {service} {environment} {cluster}
   logURLTemplate: https://grafana.example.com/explore?commit={sha}
+  logURLTemplateEscape: true
   logLevel: info
 
 github:
@@ -150,6 +152,7 @@ reference (env vars, Helm map, metrics, registries).
 | `config.environmentURL` | `ENVIRONMENT_URL` | Optional URL on deployment statuses |
 | `config.description` | `DESCRIPTION` | Optional default deployment description (default `Deployed by FluxCD`) |
 | `config.logURLTemplate` | `LOG_URL_TEMPLATE` | Optional log URL template (`{sha}`, `{namespace}`, `{name}`, `{service}`, `{environment}`, `{cluster}`) |
+| `config.logURLTemplateEscape` | `LOG_URL_TEMPLATE_ESCAPE` | Percent-encode substituted values (recommended) |
 | `config.logLevel` | `LOG_LEVEL` | `debug` / `info` / `warn` / `error` |
 | `config.githubBaseURL` | `GITHUB_BASE_URL` | GitHub Enterprise base URL |
 

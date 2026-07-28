@@ -97,12 +97,46 @@ func TestExpandLogURLTemplate(t *testing.T) {
 			vars: config.LogURLVars{Name: "backend"},
 			want: "https://logs.example.com/s/backend",
 		},
+		{
+			name: "grafana dashboard preset",
+			tmpl: "https://grafana.example.com/d/workload/logs?var-cluster={cluster}&var-namespace={namespace}&var-service={service}&var-environment={environment}&var-sha={sha}",
+			vars: config.LogURLVars{SHA: "deadbeef", Namespace: "apps", Name: "api", Cluster: "prod", Environment: "production"},
+			want: "https://grafana.example.com/d/workload/logs?var-cluster=prod&var-namespace=apps&var-service=api&var-environment=production&var-sha=deadbeef",
+		},
+		{
+			name: "generic flux kubernetes dashboard preset",
+			tmpl: "https://ops.example.com/clusters/{cluster}/namespaces/{namespace}/workloads/{name}?environment={environment}&service={service}&revision={sha}",
+			vars: config.LogURLVars{SHA: "abc", Namespace: "payments", Name: "worker", Service: "payments-worker", Cluster: "eu-1", Environment: "staging"},
+			want: "https://ops.example.com/clusters/eu-1/namespaces/payments/workloads/worker?environment=staging&service=payments-worker&revision=abc",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			if got := config.ExpandLogURLTemplate(tt.tmpl, tt.vars); got != tt.want {
 				t.Fatalf("ExpandLogURLTemplate = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestExpandLogURLTemplateEscaped(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name   string
+		tmpl   string
+		vars   config.LogURLVars
+		escape bool
+		want   string
+	}{
+		{"backwards compatible literal values", "https://logs.example/{namespace}?q={service}", config.LogURLVars{Namespace: "team one", Service: "api/core"}, false, "https://logs.example/team one?q=api/core"},
+		{"escape path and query values", "https://logs.example/{namespace}?q={service}&env={environment}", config.LogURLVars{Namespace: "team one", Service: "api/core?x=1", Environment: "preview & qa"}, true, "https://logs.example/team%20one?q=api%2Fcore%3Fx%3D1&env=preview%20%26%20qa"},
+		{"escape fallback service", "https://logs.example/?service={service}", config.LogURLVars{Name: "api/canary"}, true, "https://logs.example/?service=api%2Fcanary"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := config.ExpandLogURLTemplateEscaped(tt.tmpl, tt.vars, tt.escape); got != tt.want {
+				t.Fatalf("ExpandLogURLTemplateEscaped = %q, want %q", got, tt.want)
 			}
 		})
 	}

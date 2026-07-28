@@ -5,10 +5,12 @@
 package deployment_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -222,6 +224,31 @@ func TestReporterLogURLAnnotationTemplate(t *testing.T) {
 	want := "https://grafana.example.com/s/loki-backend/ns/apps?sha=deadbeefcafebabe"
 	if g.statuses[0].LogURL != want {
 		t.Fatalf("LogURL = %q, want %q", g.statuses[0].LogURL, want)
+	}
+}
+
+func TestReporterInvalidExpandedLogURLIsOmitted(t *testing.T) {
+	t.Parallel()
+	store, err := cache.Open(filepath.Join(t.TempDir(), "cache.db"))
+	if err != nil {
+		t.Fatalf("open cache: %v", err)
+	}
+	t.Cleanup(func() { _ = store.Close() })
+
+	var logs bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&logs, nil))
+	g := &fakeGitHub{}
+	r := deployment.NewReporter(config.Config{ClusterName: "prod", Environment: "production", LogURLTemplate: "://bad/{name}"}, store,
+		&fakeRegistry{meta: ocilabels.Metadata{Source: "https://github.com/example/backend", Revision: "deadbeef", Digest: "sha256:abc"}}, g, nil, logger, "test")
+
+	if err := r.Report(context.Background(), sampleInput(deployment.PhaseSuccess)); err != nil {
+		t.Fatalf("invalid log URL must not fail reporting: %v", err)
+	}
+	if len(g.statuses) != 1 || g.statuses[0].LogURL != "" {
+		t.Fatalf("statuses = %#v, want one status without log URL", g.statuses)
+	}
+	if !strings.Contains(logs.String(), "invalid HTTPS URL; omitting log_url") || !strings.Contains(logs.String(), "source=LOG_URL_TEMPLATE") {
+		t.Fatalf("warning log = %q", logs.String())
 	}
 }
 

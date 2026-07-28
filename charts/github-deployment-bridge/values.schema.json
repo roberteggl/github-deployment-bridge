@@ -184,6 +184,7 @@
         "environmentURL": { "type": "string" },
         "description": { "type": "string" },
         "logURLTemplate": { "type": "string" },
+        "logURLTemplateEscape": { "type": "boolean" },
         "logLevel": {
           "type": "string",
           "enum": ["debug", "info", "warn", "error"]
