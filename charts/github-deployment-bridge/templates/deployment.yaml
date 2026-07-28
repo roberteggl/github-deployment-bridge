@@ -92,6 +92,9 @@ spec:
                 secretKeyRef:
                   name: {{ include "github-deployment-bridge.secretName" . }}
                   key: installation-id
+                  optional: true
+            - name: GITHUB_INSTALLATION_CACHE_TTL
+              value: {{ .Values.config.githubInstallationCacheTTL | quote }}
             - name: GITHUB_PRIVATE_KEY_PATH
               value: /github/private-key.pem
             {{- if .Values.config.githubBaseURL }}

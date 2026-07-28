@@ -6,13 +6,14 @@ SPDX-License-Identifier: Apache-2.0
 
 # Secrets
 
-The controller needs three credentials from the GitHub App. They are read from a
+The controller needs two credentials from the GitHub App, plus an optional
+installation override. They are read from a
 Kubernetes Secret with these keys:
 
 | Secret key | Env var | Description |
 |---|---|---|
 | `app-id` | `GITHUB_APP_ID` | Numeric GitHub App ID |
-| `installation-id` | `GITHUB_INSTALLATION_ID` | Installation ID for the org/repos |
+| `installation-id` (optional) | `GITHUB_INSTALLATION_ID` | Fixed installation override; omit to resolve by repository owner |
 | `private-key` | (mounted as file) | PEM private key; path set via `GITHUB_PRIVATE_KEY_PATH` |
 
 The Helm chart mounts `private-key` at `/github/private-key.pem` and sets
@@ -23,7 +24,6 @@ The Helm chart mounts `private-key` at `/github/private-key.pem` and sets
 ```bash
 kubectl -n flux-system create secret generic github-deployment-bridge \
   --from-literal=app-id=123456 \
-  --from-literal=installation-id=987654 \
   --from-file=private-key=./github-app.pem
 ```
 
@@ -53,10 +53,13 @@ helm upgrade --install github-deployment-bridge \
   --namespace flux-system \
   --set github.allowInsecureValues=true \
   --set github.appId=123456 \
-  --set github.installationId=987654 \
   --set-file github.privateKey=./github-app.pem \
   --set config.clusterName=production-eu \
   --set config.environment=production
 ```
+
+Add `--from-literal=installation-id=987654` or
+`--set github.installationId=987654` only when all repositories must use one
+specific installation. Existing secrets containing that key remain supported.
 
 Next: [PVC](./persistence.md) · [Install with Helm](./helm.md)

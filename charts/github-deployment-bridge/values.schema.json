@@ -190,6 +190,7 @@
         },
         "leaderElection": { "type": "boolean" },
         "githubBaseURL": { "type": "string" },
+        "githubInstallationCacheTTL": { "type": "string", "minLength": 1 },
         "retry": {
           "type": "object",
           "additionalProperties": false,

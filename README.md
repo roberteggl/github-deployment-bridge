@@ -93,7 +93,7 @@ PVC / SQLite at `/data/cache.db` deduplicates
 | `/healthz` | Liveness |
 | `/readyz` | Readiness |
 
-Metrics include `deployments_created_total`, `deployment_status_updates_total`, `deployment_failures_total`, `deployment_errors_total`, `deployment_duplicates_skipped_total`, `deployment_inactive_total`, `github_api_requests_total`, `github_api_failures_total`, `github_api_latency_seconds`, and `oci_requests_total`.
+Metrics include `deployments_created_total`, `deployment_status_updates_total`, `deployment_failures_total`, `deployment_errors_total`, `deployment_duplicates_skipped_total`, `deployment_inactive_total`, `github_api_requests_total`, `github_api_failures_total`, `github_api_latency_seconds`, `github_installation_resolutions_total`, and `oci_requests_total`.
 
 Helm: optional `serviceMonitor.enabled` / `prometheusRule.enabled` for Prometheus
 Operator; restrict scrape peers with `networkPolicy` + `metricsFrom`

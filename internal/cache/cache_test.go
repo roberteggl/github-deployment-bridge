@@ -152,4 +152,18 @@ INSERT INTO deployments VALUES ('acme','api','production','abc123',7,'success','
 	if cache.LatestStatus(got) != cache.StatusSuccess || got.DeploymentID != 7 {
 		t.Fatalf("migrated entry = %#v", got)
 	}
+	if err := store.PutInstallation(context.Background(), cache.InstallationEntry{Owner: "Acme", InstallationID: 42}); err != nil {
+		t.Fatalf("put installation after migration: %v", err)
+	}
+	installation, err := store.GetInstallation(context.Background(), "acme")
+	if err != nil || installation == nil || installation.InstallationID != 42 {
+		t.Fatalf("installation = %#v, err = %v", installation, err)
+	}
+	if err := store.DeleteInstallation(context.Background(), "ACME"); err != nil {
+		t.Fatal(err)
+	}
+	installation, err = store.GetInstallation(context.Background(), "acme")
+	if err != nil || installation != nil {
+		t.Fatalf("deleted installation = %#v, err = %v", installation, err)
+	}
 }
