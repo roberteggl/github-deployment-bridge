@@ -70,7 +70,7 @@ const config: UserConfig = {
     enableScrollToTop: true,
     footer: {
       message:
-        'Copyright © 2026 Robert Eggl.<br />Released under the <a href="https://github.com/roberteggl/github-deployment-bridge/blob/main/LICENSE">Apache License 2.0</a>.',
+        'Copyright © 2026 <a href="https://eggl.dev">Robert Eggl</a>.<br />Released under the <a href="https://github.com/roberteggl/github-deployment-bridge/blob/main/LICENSE">Apache License 2.0</a>.',
     },
   },
   builderConfig: {
