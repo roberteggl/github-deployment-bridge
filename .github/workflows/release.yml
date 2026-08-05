@@ -210,7 +210,7 @@ jobs:
           exit-code: "1"
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          version: v0.72.0 # trivy
+          version: v0.73.0 # trivy
 
       - name: Export digest
         run: |
