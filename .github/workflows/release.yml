@@ -316,7 +316,7 @@ jobs:
 
       - name: Attest image build provenance
         id: attest-image
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.digest.outputs.digest }}
@@ -365,7 +365,7 @@ jobs:
 
       - name: Attest chart package provenance
         id: attest-chart
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: ${{ steps.package.outputs.file }}
 
@@ -408,7 +408,7 @@ jobs:
             "${{ env.REGISTRY }}/${{ github.repository_owner }}/charts/github-deployment-bridge@${{ steps.push.outputs.digest }}"
 
       - name: Attest chart OCI provenance
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-name: ${{ env.REGISTRY }}/${{ github.repository_owner }}/charts/github-deployment-bridge
           subject-digest: ${{ steps.push.outputs.digest }}
