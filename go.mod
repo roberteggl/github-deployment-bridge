@@ -11,16 +11,16 @@ require (
 	github.com/fluxcd/helm-controller/api v1.6.3
 	github.com/fluxcd/kustomize-controller/api v1.9.4
 	github.com/fluxcd/pkg/apis/meta v1.31.0
-	github.com/go-chi/chi/v5 v5.3.1
+	github.com/go-chi/chi/v5 v5.3.2
 	github.com/go-logr/logr v1.4.4
 	github.com/google/go-containerregistry v0.21.9
 	github.com/google/go-github/v89 v89.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.24.1
-	k8s.io/api v0.36.3
-	k8s.io/apimachinery v0.36.3
-	k8s.io/client-go v0.36.3
-	modernc.org/sqlite v1.56.0
+	k8s.io/api v0.36.4
+	k8s.io/apimachinery v0.36.4
+	k8s.io/client-go v0.36.4
+	modernc.org/sqlite v1.57.0
 	sigs.k8s.io/controller-runtime v0.24.1
 )
 
