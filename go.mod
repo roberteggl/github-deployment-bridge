@@ -15,6 +15,7 @@ require (
 	github.com/go-logr/logr v1.4.4
 	github.com/google/go-containerregistry v0.22.1
 	github.com/google/go-github/v89 v89.0.0
+	github.com/google/go-github/v91 v91.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.24.1
 	k8s.io/api v0.37.0
