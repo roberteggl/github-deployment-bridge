@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/google/go-github/v89/github"
+	"github.com/google/go-github/v92/github"
 
 	"github.com/roberteggl/github-deployment-bridge/internal/cache"
 	"github.com/roberteggl/github-deployment-bridge/internal/metrics"
