@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/google/go-github/v89/github"
+	"github.com/google/go-github/v92/github"
 
 	"github.com/roberteggl/github-deployment-bridge/internal/cache"
 	"github.com/roberteggl/github-deployment-bridge/internal/metrics"
@@ -278,14 +278,14 @@ func (c *AppClient) CreateDeployment(ctx context.Context, req DeploymentRequest)
 		}
 		ghReq := github.DeploymentRequest{
 			Ref:                   req.Ref,
-			Environment:           github.Ptr(req.Environment),
-			AutoMerge:             github.Ptr(false),
+			Environment:           ptr(req.Environment),
+			AutoMerge:             ptr(false),
 			RequiredContexts:      []string{},
-			ProductionEnvironment: github.Ptr(req.ProductionEnvironment),
-			Description:           github.Ptr(desc),
+			ProductionEnvironment: ptr(req.ProductionEnvironment),
+			Description:           ptr(desc),
 		}
 		if req.Task != "" {
-			ghReq.Task = github.Ptr(req.Task)
+			ghReq.Task = ptr(req.Task)
 		}
 		if len(req.Payload) > 0 {
 			ghReq.Payload = req.Payload
@@ -376,14 +376,14 @@ func (c *AppClient) CreateDeploymentStatus(ctx context.Context, req DeploymentSt
 		}
 		ghReq := github.DeploymentStatusRequest{
 			State:        req.State,
-			Description:  github.Ptr(desc),
-			AutoInactive: github.Ptr(req.AutoInactive),
+			Description:  ptr(desc),
+			AutoInactive: ptr(req.AutoInactive),
 		}
 		if req.EnvironmentURL != "" {
-			ghReq.EnvironmentURL = github.Ptr(req.EnvironmentURL)
+			ghReq.EnvironmentURL = ptr(req.EnvironmentURL)
 		}
 		if req.LogURL != "" {
-			ghReq.LogURL = github.Ptr(req.LogURL)
+			ghReq.LogURL = ptr(req.LogURL)
 		}
 
 		_, resp, err := client.Repositories.CreateDeploymentStatus(ctx, req.Owner, req.Repo, req.DeploymentID, ghReq)
@@ -520,4 +520,10 @@ func parseRetryAfterHeader(v string) (time.Duration, bool) {
 		return 0, false
 	}
 	return d, true
+}
+
+// ptr returns a pointer to v. Prefer this over github.Ptr/String/Bool: those are
+// marked //go:fix inline in go-github v92+, which govet rejects at call sites.
+func ptr[T any](v T) *T {
+	return &v
 }

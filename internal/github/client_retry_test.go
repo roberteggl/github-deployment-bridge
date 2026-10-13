@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	gogithub "github.com/google/go-github/v89/github"
+	gogithub "github.com/google/go-github/v92/github"
 
 	"github.com/roberteggl/github-deployment-bridge/pkg/retry"
 )
