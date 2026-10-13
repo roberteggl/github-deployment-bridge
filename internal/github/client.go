@@ -278,14 +278,14 @@ func (c *AppClient) CreateDeployment(ctx context.Context, req DeploymentRequest)
 		}
 		ghReq := github.DeploymentRequest{
 			Ref:                   req.Ref,
-			Environment:           github.Ptr(req.Environment),
-			AutoMerge:             github.Ptr(false),
+			Environment:           github.String(req.Environment),
+			AutoMerge:             github.Bool(false),
 			RequiredContexts:      []string{},
-			ProductionEnvironment: github.Ptr(req.ProductionEnvironment),
-			Description:           github.Ptr(desc),
+			ProductionEnvironment: github.Bool(req.ProductionEnvironment),
+			Description:           github.String(desc),
 		}
 		if req.Task != "" {
-			ghReq.Task = github.Ptr(req.Task)
+			ghReq.Task = github.String(req.Task)
 		}
 		if len(req.Payload) > 0 {
 			ghReq.Payload = req.Payload
@@ -376,14 +376,14 @@ func (c *AppClient) CreateDeploymentStatus(ctx context.Context, req DeploymentSt
 		}
 		ghReq := github.DeploymentStatusRequest{
 			State:        req.State,
-			Description:  github.Ptr(desc),
-			AutoInactive: github.Ptr(req.AutoInactive),
+			Description:  github.String(desc),
+			AutoInactive: github.Bool(req.AutoInactive),
 		}
 		if req.EnvironmentURL != "" {
-			ghReq.EnvironmentURL = github.Ptr(req.EnvironmentURL)
+			ghReq.EnvironmentURL = github.String(req.EnvironmentURL)
 		}
 		if req.LogURL != "" {
-			ghReq.LogURL = github.Ptr(req.LogURL)
+			ghReq.LogURL = github.String(req.LogURL)
 		}
 
 		_, resp, err := client.Repositories.CreateDeploymentStatus(ctx, req.Owner, req.Repo, req.DeploymentID, ghReq)
