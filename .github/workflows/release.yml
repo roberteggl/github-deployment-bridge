@@ -24,7 +24,7 @@ env:
 jobs:
   validate:
     name: Validate
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -95,7 +95,7 @@ jobs:
   changelog:
     name: Changelog
     needs: validate
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     outputs:
@@ -229,7 +229,7 @@ jobs:
   merge-image:
     name: Merge multi-arch image
     needs: [changelog, image]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       packages: write
@@ -325,7 +325,7 @@ jobs:
   helm:
     name: Helm chart
     needs: [changelog, merge-image]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       packages: write
@@ -440,7 +440,7 @@ jobs:
   release:
     name: GitHub Release
     needs: [changelog, merge-image, helm]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment:
       name: production
       url: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}
