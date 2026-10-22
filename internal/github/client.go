@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/google/go-github/v92/github"
+	"github.com/google/go-github/v93/github"
 
 	"github.com/roberteggl/github-deployment-bridge/internal/cache"
 	"github.com/roberteggl/github-deployment-bridge/internal/metrics"
@@ -523,7 +523,7 @@ func parseRetryAfterHeader(v string) (time.Duration, bool) {
 }
 
 // ptr returns a pointer to v. Prefer this over github.Ptr/String/Bool: those are
-// marked //go:fix inline in go-github v92+, which govet rejects at call sites.
+// marked //go:fix inline in go-github v93+, which govet rejects at call sites.
 func ptr[T any](v T) *T {
 	return &v
 }
