@@ -208,8 +208,14 @@ func run() error {
 	case err := <-serverErr:
 		stop()
 		shutdownServer()
-		<-managerErr
-		return err
+		mgrErr := <-managerErr
+		if err != nil {
+			return err
+		}
+		if mgrErr != nil {
+			return fmt.Errorf("manager exited: %w", mgrErr)
+		}
+		return nil
 	case err := <-managerErr:
 		stop()
 		shutdownServer()
