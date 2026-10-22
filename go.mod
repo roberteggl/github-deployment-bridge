@@ -14,7 +14,6 @@ require (
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/go-logr/logr v1.4.4
 	github.com/google/go-containerregistry v0.22.1
-	github.com/google/go-github/v92 v92.0.0
 	github.com/google/go-github/v93 v93.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.25.0
