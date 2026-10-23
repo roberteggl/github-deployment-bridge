@@ -397,7 +397,7 @@ jobs:
           exit-code: "1"
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          version: v0.76.0 # trivy
+          version: v0.76.1 # trivy
 
   reuse:
     name: REUSE
