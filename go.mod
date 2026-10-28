@@ -8,8 +8,8 @@ go 1.27.0
 
 require (
 	github.com/bradleyfalzon/ghinstallation/v2 v2.19.0
-	github.com/fluxcd/helm-controller/api v1.6.5
-	github.com/fluxcd/kustomize-controller/api v1.9.6
+	github.com/fluxcd/helm-controller/api v1.7.1
+	github.com/fluxcd/kustomize-controller/api v1.10.1
 	github.com/fluxcd/pkg/apis/meta v1.38.0
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/go-logr/logr v1.4.4
@@ -33,9 +33,11 @@ require (
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
-	github.com/fluxcd/pkg/apis/kustomize v1.19.2 // indirect
+	github.com/fluxcd/pkg/apis/acl v0.12.0 // indirect
+	github.com/fluxcd/pkg/apis/kustomize v1.23.0 // indirect
+	github.com/fluxcd/source-controller/api v1.10.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/fxamacker/cbor/v2 v2.9.1 // indirect
+	github.com/fxamacker/cbor/v2 v2.9.2 // indirect
 	github.com/go-openapi/jsonpointer v1.0.0 // indirect
 	github.com/go-openapi/jsonreference v1.0.0 // indirect
 	github.com/go-openapi/swag v0.27.1 // indirect
@@ -86,7 +88,7 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gotest.tools/v3 v3.5.2 // indirect
-	k8s.io/apiextensions-apiserver v0.37.0 // indirect
+	k8s.io/apiextensions-apiserver v0.37.1 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad // indirect
 	k8s.io/utils v0.0.0-20260626114624-be93311217bd // indirect
