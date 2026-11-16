@@ -10,7 +10,9 @@
     ":maintainLockFilesWeekly"
   ],
   "labels": ["dependencies"],
-  "dependencyDashboard": true,
+  "dependencyDashboard": {
+    "enabled": true
+  },
   "platformAutomerge": true,
   "minimumReleaseAge": "2 days",
   "internalChecksFilter": "strict",
